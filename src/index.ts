@@ -738,3 +738,20 @@ export {
   QualityMonitor,
   SmartBufferManager,
 } from './audio';
+
+// Export events
+export {
+  addAudioEventListener,
+  addSoundChunkPlayedListener,
+  subscribeToEvent,
+  AudioEventPayload,
+  SoundChunkPlayedEventPayload,
+  DeviceReconnectedEventPayload,
+  DeviceReconnectedReason,
+} from './events';
+
+// Main export alias for cleaner imports
+export { ExpoPlayAudioStream as ExpoStreamer };
+
+// Default export
+export default ExpoPlayAudioStream;

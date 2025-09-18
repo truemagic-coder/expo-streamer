@@ -1,11 +1,60 @@
+# Development and testing files
+example/
+android/src/test/
+android/src/androidTest/
+android/build/
+ios/Tests/
+__tests__/
+__mocks__/
+*.test.ts
+*.test.js
+coverage/
+.nyc_output/
+
+# Configuration files
+babel.config.js
+.eslintrc*
+.prettierrc*
+jest.config.*
+
+# Build and development files
+.expo/
+.gradle/
+build/
+node_modules/
+.env*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git and CI
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Documentation (keep README and LICENSE)
+CONTRIBUTING.md
+docs/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Exclude all top-level hidden directories by convention
 /.*/
-
-__mocks__
-__tests__
-
-/babel.config.js
-/android/src/androidTest/
-/android/src/test/
-/android/build/
-/example/

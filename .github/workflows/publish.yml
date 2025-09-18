@@ -1,0 +1,122 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  test:
+    name: Run Tests Before Publish
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: npm run test:coverage
+
+    - name: Run linter
+      run: npm run lint
+
+    - name: Build package
+      run: npm run build
+
+  publish:
+    name: Publish Package
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "bevan@bevanhunt.com"
+        git config --local user.name "Bevan Hunt"
+
+    - name: Bump version (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      id: version
+      run: |
+        NEW_VERSION=$(npm version ${{ github.event.inputs.release_type }} --no-git-tag-version)
+        git add package.json package-lock.json
+        git commit -m "chore: bump version to ${NEW_VERSION}"
+        git tag ${NEW_VERSION}
+        git push origin main --tags
+        echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Build package
+      run: npm run build
+
+    - name: Publish to NPM
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Create GitHub release (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.new_version }}
+        release_name: Release ${{ steps.version.outputs.new_version }}
+        body: |
+          ## Changes
+          
+          This release includes:
+          - Bug fixes and improvements
+          - Updated dependencies
+          - Enhanced error handling
+          
+          For detailed changes, see the [commit history](https://github.com/bevanhunt/expo-streamer/commits/main).
+        draft: false
+        prerelease: false
+
+  notify:
+    name: Notify Success
+    runs-on: ubuntu-latest
+    needs: publish
+    if: success()
+
+    steps:
+    - name: Notify successful publish
+      run: |
+        echo "✅ Successfully published expo-streamer to NPM!"
+        echo "📦 Package: https://www.npmjs.com/package/expo-streamer"
+        echo "🔗 Repository: https://github.com/bevanhunt/expo-streamer"
