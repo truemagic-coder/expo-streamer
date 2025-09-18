@@ -1,0 +1,52 @@
+{
+  "name": "@mykin-ai/expo-audio-stream",
+  "version": "0.2.28",
+  "description": "Expo Play Audio Stream module",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "source": "src/index.ts",
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean",
+    "lint": "expo-module lint",
+    "test": "jest",
+    "test:ios": "xcodebuild test -workspace example/ios/expoaudiostreamexample.xcworkspace -scheme expoaudiostreamexample -destination 'platform=iOS Simulator,name=iPhone 14'",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "prepare": "expo-module prepare",
+    "postinstall": "husky",
+    "prepublishOnly": "expo-module prepublishOnly",
+    "expo-module": "expo-module",
+    "open:ios": "open -a \"Xcode\" example/ios",
+    "open:android": "open -a \"Android Studio\" example/android"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "expo-play-audio-stream",
+    "ExpoPlayAudioStream"
+  ],
+  "repository": "https://github.com/mykin-ai/expo-audio-stream",
+  "bugs": {
+    "url": "https://github.com/mykin-ai/expo-audio-stream/issues"
+  },
+  "author": "pax <nzpopa@users.noreply.github.com> (https://github.com/hyphen-id)",
+  "license": "MIT",
+  "homepage": "https://github.com/mykin-ai/expo-audio-stream#readme",
+  "devDependencies": {
+    "@types/react": "^18.0.25",
+    "@testing-library/react-native": "^12.0.0",
+    "@types/jest": "^29.0.0",
+    "expo-module-scripts": "^3.4.1",
+    "expo-modules-core": "^1.11.12",
+    "husky": "^9.0.11",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "packageManager": "yarn@4.1.1"
+}
