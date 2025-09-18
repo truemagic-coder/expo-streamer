@@ -113,6 +113,7 @@ enum class AudioQuality(
     val channels: Int
 ) {
     LOW(22050, 16, 1),
+    VOICE(24000, 16, 1),    // Optimized for voice processing
     MEDIUM(44100, 16, 1),
     HIGH(48000, 24, 2),
     ULTRA(96000, 32, 2);

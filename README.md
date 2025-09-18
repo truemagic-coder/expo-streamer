@@ -2,10 +2,11 @@
 
 [![npm version](https://badge.fury.io/js/expo-streamer.svg)](https://badge.fury.io/js/expo-streamer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/bevanhunt/expo-streamer/workflows/Tests/badge.svg)](https://github.com/bevanhunt/expo-streamer/actions)
+[![Tests](https://github.com/truemagic-coder/expo-streamer/workflows/Tests/badge.svg)](https://github.com/truemagic-coder/expo-streamer/actions)
+[![codecov](https://codecov.io/gh/truemagic-coder/expo-streamer/branch/main/graph/badge.svg)](https://codecov.io/gh/truemagic-coder/expo-streamer)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 
-**Enterprise-grade audio streaming and recording for Expo/React Native applications**
+**Enterprise-grade audio streaming and recording for Expo applications**
 
 > **Zero-crash reliability** • **Full TypeScript support** • **SOLID architecture** • **Production ready**
 
@@ -93,6 +94,39 @@ await ExpoStreamer.playAudio(
 );
 ```
 
+### Voice-Optimized Configuration
+
+```typescript
+// Voice processing with 24000 Hz sample rate (recommended for voice applications)
+const voiceConfig: RecordingConfig = {
+  sampleRate: 24000 as SampleRate,  // Voice-optimized sample rate
+  channels: 1,                      // Mono for voice
+  encoding: 'pcm_16bit' as RecordingEncodingType,
+  interval: 50,                     // Fast response for real-time voice
+  onAudioStream: async (event: AudioDataEvent) => {
+    // Process voice data with optimal settings
+    console.log('Voice data:', {
+      soundLevel: event.soundLevel,
+      dataLength: event.data.length
+    });
+  }
+};
+
+const soundConfig: SoundConfig = {
+  sampleRate: 24000 as SampleRate,
+  playbackMode: 'voiceProcessing' as PlaybackMode,
+  enableBuffering: true,
+  bufferConfig: {
+    targetBufferMs: 50,   // Lower latency for voice
+    maxBufferMs: 200,
+    minBufferMs: 25
+  }
+};
+
+await ExpoStreamer.startRecording(voiceConfig);
+await ExpoStreamer.setSoundConfig(soundConfig);
+```
+
 ### Event Handling with TypeScript
 
 ```typescript
@@ -134,7 +168,7 @@ playbackSubscription?.remove();
 
 ```typescript
 interface RecordingConfig {
-  sampleRate?: SampleRate;           // 16000 | 44100 | 48000
+  sampleRate?: SampleRate;           // 16000 | 24000 | 44100 | 48000
   channels?: number;                 // 1 (mono) or 2 (stereo)
   encoding?: RecordingEncodingType;  // 'pcm_8bit' | 'pcm_16bit' | 'pcm_32bit'
   interval?: number;                 // Callback interval in milliseconds
@@ -215,7 +249,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ```bash
 # Clone and setup
-git clone https://github.com/bevanhunt/expo-streamer.git
+git clone https://github.com/truemagic-coder/expo-streamer.git
 cd expo-streamer
 npm install
 
@@ -236,18 +270,16 @@ npm run ios     # or npm run android
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-**Author**: Bevan Hunt <bevan@bevanhunt.com>
-
 **Acknowledgments**: This project is a hard fork based on original work by Alexander Demchuk, also under MIT License.
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/bevanhunt/expo-streamer/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/bevanhunt/expo-streamer/discussions)
-- 📖 **Documentation**: [GitHub Wiki](https://github.com/bevanhunt/expo-streamer/wiki)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/truemagic-coder/expo-streamer/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/truemagic-coder/expo-streamer/discussions)
+- 📖 **Documentation**: [GitHub Wiki](https://github.com/truemagic-coder/expo-streamer/wiki)
 
 ---
 
 <div align="center">
-  <strong>Built with ❤️ for the TypeScript + React Native community</strong>
+  <strong>Built with ❤️ for the Expo community</strong>
 </div>

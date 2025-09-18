@@ -162,9 +162,9 @@ We especially welcome contributions in:
 ## 📞 Getting Help
 
 If you need help:
-- Check existing [Issues](https://github.com/bevanhunt/expo-streamer/issues)
-- Start a [Discussion](https://github.com/bevanhunt/expo-streamer/discussions)
-- Review the [documentation](https://github.com/bevanhunt/expo-streamer/wiki)
+- Check existing [Issues](https://github.com/truemagic-coder/expo-streamer/issues)
+- Start a [Discussion](https://github.com/truemagic-coder/expo-streamer/discussions)
+- Review the [documentation](https://github.com/truemagic-coder/expo-streamer/wiki)
 
 ## 🏆 Recognition
 

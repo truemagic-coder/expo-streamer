@@ -37,11 +37,11 @@
     "voice-processing",
     "audio-playback"
   ],
-  "repository": "https://github.com/bevanhunt/expo-streamer",
+  "repository": "https://github.com/truemagic-coder/expo-streamer",
   "bugs": {
-    "url": "https://github.com/bevanhunt/expo-streamer/issues"
+    "url": "https://github.com/truemagic-coder/expo-streamer/issues"
   },
-  "author": "Bevan Hunt <bevan@bevanhunt.com> (https://bevanhunt.com)",
+  "author": "Bevan Hunt <bevan@bevanhunt.com>",
   "contributors": [
     {
       "name": "Alexander Demchuk",
@@ -51,7 +51,7 @@
     }
   ],
   "license": "MIT",
-  "homepage": "https://github.com/bevanhunt/expo-streamer#readme",
+  "homepage": "https://github.com/truemagic-coder/expo-streamer#readme",
   "devDependencies": {
     "@types/react": "^18.0.25",
     "@testing-library/react-native": "^12.0.0",

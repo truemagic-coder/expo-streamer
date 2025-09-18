@@ -104,7 +104,7 @@ jobs:
           - Updated dependencies
           - Enhanced error handling
           
-          For detailed changes, see the [commit history](https://github.com/bevanhunt/expo-streamer/commits/main).
+          For detailed changes, see the [commit history](https://github.com/truemagic-coder/expo-streamer/commits/main).
         draft: false
         prerelease: false
 
@@ -119,4 +119,4 @@ jobs:
       run: |
         echo "✅ Successfully published expo-streamer to NPM!"
         echo "📦 Package: https://www.npmjs.com/package/expo-streamer"
-        echo "🔗 Repository: https://github.com/bevanhunt/expo-streamer"
+        echo "🔗 Repository: https://github.com/truemagic-coder/expo-streamer"

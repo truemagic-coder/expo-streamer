@@ -1,0 +1,31 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 90%
+        threshold: 2%
+        base: auto
+    patch:
+      default:
+        target: 80%
+        threshold: 2%
+        base: auto
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "example/**/*"
+  - "android/build/**/*"
+  - "ios/build/**/*"
+  - "build/**/*"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/__tests__/**/*"
+  - "**/__mocks__/**/*"
+  - "jest.config.js"
+  - "babel.config.js"
+  - "metro.config.js"
+  - "webpack.config.js"
