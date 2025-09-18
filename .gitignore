@@ -26,6 +26,9 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 
+# Tests
+/coverage/
+
 # Android/IJ
 #
 .classpath
@@ -41,10 +44,8 @@ android/keystores/debug.keystore
 
 # Cocoapods
 #
-example/ios/Pods
 
 # Ruby
-example/vendor/
 
 # node.js
 #
@@ -56,8 +57,4 @@ yarn-error.log
 # Expo
 .expo/*
 
-# Example
-/example/ios/*
-/example/android/*
-example/ios/expoaudiostreamexample.xcodeproj/project.pbxproj
 .cursor/

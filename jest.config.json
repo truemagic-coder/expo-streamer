@@ -22,7 +22,7 @@
     "/build/",
     "/example/"
   ],
-  "moduleNameMapping": {
+  "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/src/$1"
   }
 }

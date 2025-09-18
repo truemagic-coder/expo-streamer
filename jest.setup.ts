@@ -1,4 +1,5 @@
 /// <reference types="jest" />
+declare var global: any;
 
 // Jest setup file
 import '@testing-library/jest-native/extend-expect';
@@ -8,7 +9,18 @@ jest.mock('react-native', () => ({
   NativeModules: {},
   Platform: {
     OS: 'ios',
-    select: jest.fn(),
+    select: jest.fn((config: any) => config.ios || config.default),
+  },
+  Dimensions: {
+    get: jest.fn(() => ({ width: 375, height: 667 })),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  },
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
+  },
+  Alert: {
+    alert: jest.fn(),
   },
 }));
 
@@ -17,6 +29,17 @@ jest.mock('expo-modules-core', () => ({
   NativeModulesProxy: {},
   EventEmitter: jest.fn(),
   Subscription: jest.fn(),
+  requireNativeModule: jest.fn(() => ({
+    // Mock native module methods
+    startAudioStream: jest.fn(),
+    stopAudioStream: jest.fn(),
+    pauseAudioStream: jest.fn(),
+    resumeAudioStream: jest.fn(),
+    adjustVolume: jest.fn(),
+    getAudioLevel: jest.fn(() => 0),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  })),
 }));
 
 // Global test configuration

@@ -131,6 +131,7 @@ export class AudioBufferManager
 
     const metrics = this._qualityMonitor.getMetrics();
     metrics.currentBufferMs = this.getCurrentBufferMs();
+    metrics.targetBufferMs = this._config.targetBufferMs; // Fix: Set the actual target from config
     metrics.bufferHealthState =
       this._qualityMonitor.getBufferHealthState(
         this._isActive,

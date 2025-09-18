@@ -703,9 +703,6 @@ export class ExpoPlayAudioStream {
 
 export {
   AudioDataEvent,
-  SoundChunkPlayedEventPayload,
-  DeviceReconnectedReason,
-  DeviceReconnectedEventPayload,
   AudioRecording,
   RecordingConfig,
   StartRecordingResult,
