@@ -679,6 +679,19 @@ export class ExpoPlayAudioStream {
   }
 
   /**
+   * Requests audio recording permissions from the user.
+   * @returns {Promise<{granted: boolean}>} A promise that resolves to the permission status.
+   * @throws {Error} If the permission request fails.
+   */
+  static async requestPermissionsAsync(): Promise<{granted: boolean}> {
+    try {
+      return await ExpoPlayAudioStreamModule.requestPermissionsAsync();
+    } catch (error) {
+      throw new Error(`Failed to request permissions: ${error}`);
+    }
+  }
+
+  /**
    * Prompts the user to select the microphone mode.
    * @returns {Promise<void>}
    * @throws {Error} If the microphone mode fails to prompt.
