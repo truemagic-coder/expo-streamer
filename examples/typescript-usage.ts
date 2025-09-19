@@ -10,8 +10,9 @@ import {
   AudioDataEvent,
   SoundConfig,
   EncodingTypes,
-  SampleRate,
-  PlaybackMode
+  SampleRates,
+  PlaybackModes,
+  RecordingEncodingTypes
 } from 'expo-streamer';
 
 // Example 1: Basic Recording with Type Safety
@@ -19,9 +20,9 @@ async function basicRecordingExample(): Promise<void> {
   try {
     // Define recording configuration with full TypeScript support
     const recordingConfig: RecordingConfig = {
-      sampleRate: 44100,
+      sampleRate: SampleRates.SR_44100,
       channels: 1,
-      encoding: 'pcm_16bit',
+      encoding: RecordingEncodingTypes.PCM_16BIT,
       interval: 250,
       onAudioStream: (event: AudioDataEvent) => {
         console.log('Audio data received:', {
@@ -58,8 +59,8 @@ async function advancedConfigurationExample(): Promise<void> {
   try {
     // Configure audio playback with type safety
     const soundConfig: SoundConfig = {
-      sampleRate: 44100 as SampleRate,
-      playbackMode: 'voiceProcessing' as PlaybackMode,
+      sampleRate: SampleRates.SR_44100,
+      playbackMode: PlaybackModes.VOICE_PROCESSING,
       enableBuffering: true,
       bufferConfig: {
         targetBufferMs: 100,
@@ -98,7 +99,7 @@ function eventHandlingExample(): void {
 
   // Subscribe to playback events
   const playbackSubscription = ExpoStreamer.subscribeToSoundChunkPlayed(
-    async (event) => {
+    async (event: any) => {
       console.log('Chunk played:', {
         isFinalChunk: event.isFinalChunk,
         turnId: event.turnId
@@ -118,7 +119,7 @@ async function errorHandlingExample(): Promise<void> {
   try {
     // Type-safe recording configuration
     const config: RecordingConfig = {
-      sampleRate: 44100,
+      sampleRate: SampleRates.SR_44100,
       channels: 1,
       onAudioStream: (event: AudioDataEvent) => {
         // Handle audio stream

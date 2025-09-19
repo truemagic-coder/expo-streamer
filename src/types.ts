@@ -1,7 +1,19 @@
+export const RecordingEncodingTypes = {
+  PCM_32BIT: 'pcm_32bit',
+  PCM_16BIT: 'pcm_16bit',
+  PCM_8BIT: 'pcm_8bit',
+} as const;
+
 export type RecordingEncodingType =
-  | 'pcm_32bit'
-  | 'pcm_16bit'
-  | 'pcm_8bit';
+  (typeof RecordingEncodingTypes)[keyof typeof RecordingEncodingTypes];
+
+export const SampleRates = {
+  SR_16000: 16000,
+  SR_24000: 24000,
+  SR_44100: 44100,
+  SR_48000: 48000,
+} as const;
+
 export type SampleRate = 16000 | 24000 | 44100 | 48000;
 export type BitDepth = 8 | 16 | 32;
 

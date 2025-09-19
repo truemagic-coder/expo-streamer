@@ -17,7 +17,7 @@
 | 📘 **TypeScript First** | Full TypeScript support with comprehensive type definitions |
 | ⚡ **Thread Safe** | Proper synchronization for multi-threaded audio operations |
 | 🏗️ **SOLID Architecture** | Clean, maintainable code following industry best practices |
-| 🧪 **Fully Tested** | 95%+ test coverage with comprehensive test suites |
+| 🧪 **Fully Tested** | 100% test coverage with comprehensive test suites |
 | 📱 **Cross Platform** | Works seamlessly on iOS and Android |
 | 🎛️ **Real-time** | Low-latency audio streaming perfect for voice apps |
 
@@ -34,13 +34,19 @@ yarn add expo-streamer
 ### Basic Recording and Playback
 
 ```typescript
-import { ExpoStreamer, RecordingConfig, AudioDataEvent } from 'expo-streamer';
+import { 
+  ExpoStreamer, 
+  RecordingConfig, 
+  AudioDataEvent,
+  RecordingEncodingTypes,
+  SampleRates 
+} from 'expo-streamer';
 
 // Define recording configuration with full TypeScript support
 const recordingConfig: RecordingConfig = {
-  sampleRate: 44100,
+  sampleRate: SampleRates.SR_44100,
   channels: 1,
-  encoding: 'pcm_16bit',
+  encoding: RecordingEncodingTypes.PCM_16BIT,
   interval: 250,
   onAudioStream: (event: AudioDataEvent) => {
     console.log('Audio data received:', {
@@ -55,7 +61,7 @@ const recordingConfig: RecordingConfig = {
 const { recordingResult, subscription } = await ExpoStreamer.startRecording(recordingConfig);
 
 // Play audio with proper typing
-await ExpoStreamer.playAudio(base64AudioData, 'turn-1', 'pcm_s16le');
+await ExpoStreamer.playAudio(base64AudioData, 'turn-1', EncodingTypes.PCM_S16LE);
 
 // Stop recording
 const recording = await ExpoStreamer.stopRecording();
@@ -67,15 +73,15 @@ const recording = await ExpoStreamer.stopRecording();
 import { 
   ExpoStreamer, 
   SoundConfig, 
-  PlaybackMode, 
-  SampleRate,
+  PlaybackModes, 
+  SampleRates,
   EncodingTypes 
 } from 'expo-streamer';
 
 // Configure audio playback with type safety
 const soundConfig: SoundConfig = {
-  sampleRate: 44100 as SampleRate,
-  playbackMode: 'voiceProcessing' as PlaybackMode,
+  sampleRate: SampleRates.SR_44100,
+  playbackMode: PlaybackModes.VOICE_PROCESSING,
   enableBuffering: true,
   bufferConfig: {
     targetBufferMs: 100,
@@ -99,10 +105,10 @@ await ExpoStreamer.playAudio(
 ```typescript
 // Voice processing with 24000 Hz sample rate (recommended for voice applications)
 const voiceConfig: RecordingConfig = {
-  sampleRate: 24000 as SampleRate,  // Voice-optimized sample rate
-  channels: 1,                      // Mono for voice
-  encoding: 'pcm_16bit' as RecordingEncodingType,
-  interval: 50,                     // Fast response for real-time voice
+  sampleRate: SampleRates.SR_24000,  // Voice-optimized sample rate
+  channels: 1,                       // Mono for voice
+  encoding: RecordingEncodingTypes.PCM_16BIT,
+  interval: 50,                      // Fast response for real-time voice
   onAudioStream: async (event: AudioDataEvent) => {
     // Process voice data with optimal settings
     console.log('Voice data:', {
@@ -113,8 +119,8 @@ const voiceConfig: RecordingConfig = {
 };
 
 const soundConfig: SoundConfig = {
-  sampleRate: 24000 as SampleRate,
-  playbackMode: 'voiceProcessing' as PlaybackMode,
+  sampleRate: SampleRates.SR_24000,
+  playbackMode: PlaybackModes.VOICE_PROCESSING,
   enableBuffering: true,
   bufferConfig: {
     targetBufferMs: 50,   // Lower latency for voice
@@ -168,9 +174,9 @@ playbackSubscription?.remove();
 
 ```typescript
 interface RecordingConfig {
-  sampleRate?: SampleRate;           // 16000 | 24000 | 44100 | 48000
+  sampleRate?: SampleRate;           // SampleRates.SR_16000 | SR_24000 | SR_44100 | SR_48000
   channels?: number;                 // 1 (mono) or 2 (stereo)
-  encoding?: RecordingEncodingType;  // 'pcm_8bit' | 'pcm_16bit' | 'pcm_32bit'
+  encoding?: RecordingEncodingType;  // RecordingEncodingTypes.PCM_8BIT | PCM_16BIT | PCM_32BIT
   interval?: number;                 // Callback interval in milliseconds
   onAudioStream?: (event: AudioDataEvent) => void;
 }
@@ -184,12 +190,37 @@ interface AudioDataEvent {
 }
 
 interface SoundConfig {
-  sampleRate?: SampleRate;
-  playbackMode?: PlaybackMode;
+  sampleRate?: SampleRate;           // SampleRates.SR_16000 | SR_24000 | SR_44100 | SR_48000
+  playbackMode?: PlaybackMode;       // PlaybackModes.REGULAR | VOICE_PROCESSING | CONVERSATION
   useDefault?: boolean;
   enableBuffering?: boolean;
   bufferConfig?: Partial<IAudioBufferConfig>;
 }
+
+// Available Enum Constants
+const RecordingEncodingTypes = {
+  PCM_32BIT: 'pcm_32bit',
+  PCM_16BIT: 'pcm_16bit',
+  PCM_8BIT: 'pcm_8bit',
+} as const;
+
+const SampleRates = {
+  SR_16000: 16000,
+  SR_24000: 24000,
+  SR_44100: 44100,
+  SR_48000: 48000,
+} as const;
+
+const PlaybackModes = {
+  REGULAR: 'regular',
+  VOICE_PROCESSING: 'voiceProcessing',
+  CONVERSATION: 'conversation',
+} as const;
+
+const EncodingTypes = {
+  PCM_F32LE: 'pcm_f32le',
+  PCM_S16LE: 'pcm_s16le',
+} as const;
 ```
 
 ### Recording Methods
@@ -225,7 +256,7 @@ interface SoundConfig {
 npm run test:all
 
 # Individual test suites
-npm test                    # Jest (TypeScript)
+npm test                   # Jest (TypeScript)
 npm run test:ios           # XCTest (iOS)  
 npm run test:android       # JUnit (Android)
 npm run test:coverage      # Coverage report
