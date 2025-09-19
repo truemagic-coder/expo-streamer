@@ -257,10 +257,12 @@ npm run test:all
 
 # Individual test suites
 npm test                   # Jest (TypeScript)
-npm run test:ios           # XCTest (iOS)  
-npm run test:android       # JUnit (Android)
+npm run test:android       # Android test analysis
+npm run test:ios           # iOS test guide
 npm run test:coverage      # Coverage report
 ```
+
+**Note**: Android and iOS native tests require running within an Expo app context due to module dependencies. The `test:android` command provides static analysis and validation of the Android test code structure.
 
 ## 🏗️ Architecture
 

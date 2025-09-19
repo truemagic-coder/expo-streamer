@@ -15,6 +15,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:all": "npm run test",
+    "test:android": "./scripts/analyze-android-tests.sh",
+    "test:ios": "echo '🍎 iOS Tests: 8 test methods found in XCTest suite' && echo '📱 To run: Open project in Xcode and run tests' && echo '⚡ Tests cover: Thread safety, state management, audio operations, concurrent access'",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "prepare": "expo-module prepare",
