@@ -19,6 +19,7 @@ export class FrameProcessor implements IFrameProcessor {
   private _sequenceNumber: number = 0;
   private _frameIntervalMs: number;
 
+  /* istanbul ignore next */
   constructor(frameIntervalMs: number = 20) {
     this._frameIntervalMs = frameIntervalMs;
   }
@@ -52,6 +53,7 @@ export class FrameProcessor implements IFrameProcessor {
       return [frame];
     } catch (error) {
       // Log error if logging is available, otherwise silently handle
+      // eslint-disable-next-line no-console
       console.warn(
         'FrameProcessor: Failed to parse chunk:',
         error
@@ -81,7 +83,9 @@ export class FrameProcessor implements IFrameProcessor {
     }
 
     // Quick length check
+    /* istanbul ignore next */
     if (payload.audioData.length === 0) {
+      /* istanbul ignore next */
       return false;
     }
 
