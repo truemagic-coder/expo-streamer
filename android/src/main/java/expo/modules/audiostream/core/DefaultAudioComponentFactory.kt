@@ -109,6 +109,14 @@ class SafeAudioRecorderManager(
     }
     
     override fun stopRecording(promise: expo.modules.kotlin.Promise) {
+        // If we're not currently recording or paused, treat stop as a no-op for API ergonomics
+        val current = stateManager.currentState
+        if (current != AudioComponentState.ACTIVE && current != AudioComponentState.PAUSED && current != AudioComponentState.STOPPING) {
+            // Resolve gracefully without error when there's nothing to stop
+            promise.resolve(null)
+            return
+        }
+
         if (!stateManager.transitionTo(AudioComponentState.STOPPING)) {
             promise.reject("INVALID_STATE", "Cannot stop recording in current state: ${stateManager.currentState}", null)
             return

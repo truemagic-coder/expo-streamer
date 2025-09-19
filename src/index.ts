@@ -154,13 +154,13 @@ export class ExpoPlayAudioStream {
    */
   static async playAudio(
     base64Chunk: string,
-    turnId: string,
+    turnId: string | number,
     encoding?: Encoding
   ): Promise<void> {
     try {
       return ExpoPlayAudioStreamModule.playAudio(
         base64Chunk,
-        turnId,
+        `${turnId}`,
         encoding ?? EncodingTypes.PCM_S16LE
       );
     } catch (error) {
@@ -206,11 +206,11 @@ export class ExpoPlayAudioStream {
    * @throws {Error} If the playback queue fails to clear.
    */
   static async clearPlaybackQueueByTurnId(
-    turnId: string
+    turnId: string | number
   ): Promise<void> {
     try {
       await ExpoPlayAudioStreamModule.clearPlaybackQueueByTurnId(
-        turnId
+        `${turnId}`
       );
     } catch (error) {
       console.error(error);
