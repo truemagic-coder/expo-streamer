@@ -65,6 +65,17 @@ class SafeAudioRecorderManager(
         )
     }
     
+    init {
+        // Initialize the component state properly
+        try {
+            stateManager.transitionTo(AudioComponentState.INITIALIZING)
+            // Component is ready to use after creation
+            stateManager.transitionTo(AudioComponentState.READY)
+        } catch (e: Exception) {
+            stateManager.transitionToError("Initialization failed: ${e.message}")
+        }
+    }
+    
     override fun startRecording(config: RecordingConfig, promise: expo.modules.kotlin.Promise) {
         if (!stateManager.transitionTo(AudioComponentState.ACTIVE)) {
             promise.reject("INVALID_STATE", "Cannot start recording in current state: ${stateManager.currentState}", null)
@@ -216,6 +227,22 @@ class SafeAudioPlaybackManager(
             false
         } catch (e: Exception) {
             false
+        }
+    }
+    
+    override fun updateConfig(config: SoundConfig, promise: expo.modules.kotlin.Promise) {
+        try {
+            delegate.updateConfig(config, promise)
+        } catch (e: Exception) {
+            promise.reject("UPDATE_CONFIG_ERROR", e.message, e)
+        }
+    }
+    
+    override fun resetConfigToDefault(promise: expo.modules.kotlin.Promise) {
+        try {
+            delegate.resetConfigToDefault(promise)
+        } catch (e: Exception) {
+            promise.reject("RESET_CONFIG_ERROR", e.message, e)
         }
     }
     

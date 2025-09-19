@@ -234,6 +234,39 @@ class ExpoPlayAudioStreamModuleRefactored : Module(), EventSender, EventSenderMa
             }
         }
         
+        AsyncFunction("setSoundConfig") { config: Map<String, Any?>, promise: Promise ->
+            moduleScope.launch {
+                handleSafeOperation(promise) {
+                    val useDefault = config["useDefault"] as? Boolean ?: false
+                    val playbackManager = componentManager.getAudioPlaybackManager().getOrThrow()
+                    
+                    if (useDefault) {
+                        // Reset to default configuration
+                        Log.d("ExpoPlayAudioStreamModuleRefactored", "Resetting sound configuration to default values")
+                        playbackManager.resetConfigToDefault(promise)
+                    } else {
+                        // Extract configuration values
+                        val sampleRate = (config["sampleRate"] as? Number)?.toInt() ?: 16000
+                        val playbackModeString = config["playbackMode"] as? String ?: "regular"
+                        
+                        // Convert string playback mode to enum
+                        val playbackMode = when (playbackModeString) {
+                            "voiceProcessing" -> PlaybackMode.VOICE_PROCESSING
+                            "conversation" -> PlaybackMode.CONVERSATION
+                            else -> PlaybackMode.REGULAR
+                        }
+                        
+                        // Create a new SoundConfig object
+                        val soundConfig = SoundConfig(sampleRate = sampleRate, playbackMode = playbackMode)
+                        
+                        // Update the sound player configuration
+                        Log.d("ExpoPlayAudioStreamModuleRefactored", "Setting sound configuration - sampleRate: $sampleRate, playbackMode: $playbackModeString")
+                        playbackManager.updateConfig(soundConfig, promise)
+                    }
+                }
+            }
+        }
+        
         // MARK: - Permission Functions
         
         AsyncFunction("requestPermissionsAsync") { promise: Promise ->

@@ -2,6 +2,7 @@ package expo.modules.audiostream.core
 
 import expo.modules.kotlin.Promise
 import android.os.Bundle
+import expo.modules.audiostream.SoundConfig
 
 /**
  * SOLID Principles Implementation for Android Audio Stream
@@ -34,6 +35,8 @@ interface AudioPlaybackManaging {
     fun pausePlayback(promise: Promise?)
     fun stopPlayback(promise: Promise?)
     fun isPlaying(): Boolean
+    fun updateConfig(config: SoundConfig, promise: Promise)
+    fun resetConfigToDefault(promise: Promise)
     fun destroy()
 }
 
