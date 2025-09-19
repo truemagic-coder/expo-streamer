@@ -18,8 +18,8 @@ class DefaultAudioComponentFactory(
             filesDir = context.filesDir,
             permissionUtils = PermissionUtils(context),
             audioDataEncoder = AudioDataEncoder(),
-            eventSender = eventSender ?: createEventSender(),
-            audioEffectsManager = SafeAudioEffectsManager()
+            eventSender = eventSender ?: SafeEventSender(), // Use SafeEventSender which implements both interfaces
+            audioEffectsManager = AudioEffectsManager() // Create concrete AudioEffectsManager instance
         )
     }
     
@@ -56,12 +56,19 @@ class SafeAudioRecorderManager(
     
     private val stateManager = AudioStateManager()
     private val delegate: AudioRecorderManager by lazy {
+        // Create a concrete EventSender implementation for the delegate
+        val concreteEventSender = if (eventSender is EventSender) {
+            eventSender as EventSender
+        } else {
+            SafeEventSender()
+        }
+        
         AudioRecorderManager(
             filesDir = filesDir,
-            permissionUtils = permissionUtils as PermissionUtils,
+            permissionUtils = permissionUtils,
             audioDataEncoder = audioDataEncoder,
-            eventSender = eventSender as EventSender,
-            audioEffectsManager = audioEffectsManager as AudioEffectsManager
+            eventSender = concreteEventSender,
+            audioEffectsManager = AudioEffectsManager() // Create concrete instance instead of casting
         )
     }
     
@@ -174,7 +181,13 @@ class SafeAudioPlaybackManager(
     
     private val stateManager = AudioStateManager()
     private val delegate: AudioPlaybackManager by lazy {
-        AudioPlaybackManager(eventSender as EventSender)
+        // Create a concrete EventSender implementation for the delegate
+        val concreteEventSender = if (eventSender is EventSender) {
+            eventSender as EventSender
+        } else {
+            SafeEventSender()
+        }
+        AudioPlaybackManager(concreteEventSender)
     }
     
     override fun playAudio(base64chunk: String, turnId: String, encoding: String?, promise: expo.modules.kotlin.Promise) {
