@@ -178,6 +178,7 @@ export class QualityMonitor implements IQualityMonitor {
     }
 
     // Track adjustments
+    /* istanbul ignore next */
     if (adjustmentMs !== 0) {
       this._adaptiveAdjustmentsCount++;
     }

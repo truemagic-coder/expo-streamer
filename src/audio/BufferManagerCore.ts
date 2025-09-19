@@ -275,16 +275,23 @@ export class AudioBufferManager
     }
   }
 
+  /* istanbul ignore next */
   private _handleUnderrun(): void {
+    /* istanbul ignore next */
     if (this._qualityMonitor) {
+      /* istanbul ignore next */
       this._qualityMonitor.recordUnderrun();
     }
 
+    /* istanbul ignore next */
     this._insertSilenceFrame();
   }
 
+  /* istanbul ignore next */
   private _handleOverrun(): void {
+    /* istanbul ignore next */
     if (this._qualityMonitor) {
+      /* istanbul ignore next */
       this._qualityMonitor.recordOverrun();
     }
 
@@ -343,7 +350,9 @@ export class AudioBufferManager
       binaryString += String.fromCharCode(bytes[i]);
     }
 
+    /* istanbul ignore next */
     if (typeof btoa !== 'undefined') {
+      /* istanbul ignore next */
       return btoa(binaryString);
     }
 

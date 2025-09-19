@@ -457,5 +457,38 @@ describe('QualityMonitor', () => {
       expect(adjustment).not.toBe(0);
       expect(finalCount).toBe(initialCount + 1);
     });
+
+    test('should ensure adjustment count branch is covered', () => {
+      // Create a scenario that guarantees non-zero adjustment
+      const testMonitor = new QualityMonitor();
+      
+      // Add enough history (more than 20 for recent event calculation)
+      const baseTime = Date.now();
+      for (let i = 0; i < 30; i++) {
+        testMonitor.recordFrameArrival(baseTime + i * frameIntervalMs);
+      }
+      
+      // Record multiple underruns to ensure positive adjustment that overcomes jitter reduction
+      testMonitor.recordUnderrun();
+      testMonitor.recordUnderrun();
+      testMonitor.recordUnderrun(); // 3 underruns = 60ms increase (should overcome -10ms jitter reduction)
+      
+      const beforeCount = testMonitor.getMetrics().adaptiveAdjustmentsCount;
+      const adjustment = testMonitor.getRecommendedAdjustment();
+      const afterCount = testMonitor.getMetrics().adaptiveAdjustmentsCount;
+      
+      // Verify the adjustment was non-zero (could be positive or negative, we just need !== 0)
+      expect(adjustment).not.toBe(0);
+      expect(afterCount).toBe(beforeCount + 1);
+      
+      // Test the exact branch: call again to ensure count increments for any non-zero adjustment
+      const secondBeforeCount = testMonitor.getMetrics().adaptiveAdjustmentsCount;
+      const secondAdjustment = testMonitor.getRecommendedAdjustment();
+      const secondAfterCount = testMonitor.getMetrics().adaptiveAdjustmentsCount;
+      
+      // This should hit the branch again with any non-zero adjustment
+      expect(secondAdjustment).not.toBe(0);
+      expect(secondAfterCount).toBe(secondBeforeCount + 1);
+    });
   });
 });

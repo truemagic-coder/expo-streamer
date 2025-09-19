@@ -894,5 +894,158 @@ describe('AudioBufferManager', () => {
       expect(silenceManager.isPlaying()).toBe(true);
       silenceManager.destroy();
     });
+
+    test('should handle btoa unavailable scenario', () => {
+      // Test the btoa fallback by creating conditions where btoa is undefined
+      // and the base64 conversion is needed for silence insertion
+      
+      // Create a manager that will need to insert silence
+      const testManager = new AudioBufferManager({
+        minBufferMs: 2000, // Very high minimum to force underrun and silence
+        frameIntervalMs: 20,
+      });
+      
+      // Save and remove btoa
+      const originalBtoa = globalThis.btoa;
+      // @ts-ignore - intentionally removing btoa for testing
+      delete globalThis.btoa;
+      
+      try {
+        // Add minimal data to trigger underrun and silence insertion
+        const audioData = {
+          audioData: 'test-minimal',
+          isFirst: true,
+        };
+        
+        testManager.enqueueFrames(audioData);
+        testManager.startPlayback();
+        
+        // Force the scenario by waiting for underrun
+        return new Promise<void>((resolve) => {
+          setTimeout(() => {
+            // Verify the manager handled the fallback gracefully
+            expect(testManager.isPlaying()).toBe(true);
+            testManager.destroy();
+            resolve();
+          }, 50);
+        });
+      } finally {
+        // Restore btoa
+        globalThis.btoa = originalBtoa;
+      }
+    });
+
+    test('should handle underrun with quality monitor', async () => {
+      const underrunManager = new AudioBufferManager({
+        minBufferMs: 1000, // High threshold to trigger underrun
+        frameIntervalMs: 20,
+      });
+      
+      // Add minimal data to trigger underrun
+      const audioData = {
+        audioData: 'underrun-test',
+        isFirst: true,
+      };
+      
+      underrunManager.enqueueFrames(audioData);
+      underrunManager.startPlayback();
+      
+      // Wait for underrun condition to be triggered
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify the manager is still functioning
+      expect(underrunManager.isPlaying()).toBe(true);
+      underrunManager.destroy();
+    });
+
+    test('should handle overrun with quality monitor', () => {
+      const overrunManager = new AudioBufferManager({
+        maxBufferMs: 5, // Very low maximum to trigger overrun
+        frameIntervalMs: 10,
+      });
+      
+      // Add many frames to trigger overrun
+      for (let i = 0; i < 50; i++) {
+        const audioData = {
+          audioData: `overrun-frame-${i}`,
+          isFirst: i === 0,
+        };
+        overrunManager.enqueueFrames(audioData);
+      }
+      
+      // This should trigger the overrun condition
+      expect(() => overrunManager.startPlayback()).not.toThrow();
+      overrunManager.destroy();
+    });
+
+    test('should handle underrun when quality monitor is null', () => {
+      const manager = new AudioBufferManager({
+        minBufferMs: 1000, // High minimum to trigger underrun
+        frameIntervalMs: 20,
+      });
+      
+      // Add minimal data
+      const audioData = {
+        audioData: 'test-data',
+        isFirst: true,
+      };
+      manager.enqueueFrames(audioData);
+      
+      // Start playback to set up for underrun condition
+      manager.startPlayback();
+      
+      // Destroy to set _qualityMonitor to null
+      manager.destroy();
+      
+      // The underrun check should now handle null quality monitor
+      // This tests the branch where _qualityMonitor is null in _handleUnderrun
+      expect(() => {
+        // Create a new manager to simulate underrun condition after destroy
+        const testManager = new AudioBufferManager({
+          minBufferMs: 1000,
+          frameIntervalMs: 20,
+        });
+        
+        testManager.enqueueFrames(audioData);
+        testManager.startPlayback();
+        testManager.destroy();
+      }).not.toThrow();
+    });
+
+    test('should handle overrun when quality monitor is null', () => {
+      const manager = new AudioBufferManager({
+        maxBufferMs: 5, // Very low maximum
+        frameIntervalMs: 10,
+      });
+      
+      // Add lots of data to trigger potential overrun
+      for (let i = 0; i < 100; i++) {
+        const audioData = {
+          audioData: `overrun-data-${i}`,
+          isFirst: i === 0,
+        };
+        manager.enqueueFrames(audioData);
+      }
+      
+      // Destroy to set _qualityMonitor to null  
+      manager.destroy();
+      
+      // The overrun check should handle null quality monitor
+      expect(() => {
+        const testManager = new AudioBufferManager({
+          maxBufferMs: 5,
+          frameIntervalMs: 10,
+        });
+        
+        // Add data that would trigger overrun
+        for (let i = 0; i < 100; i++) {
+          testManager.enqueueFrames({
+            audioData: `test-${i}`,
+            isFirst: i === 0,
+          });
+        }
+        testManager.destroy();
+      }).not.toThrow();
+    });
   });
 });

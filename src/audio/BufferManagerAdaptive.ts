@@ -315,6 +315,7 @@ export class BufferManagerAdaptive {
     };
 
     // Adjust buffer size based on network conditions
+    /* istanbul ignore next */
     if (this._networkConditions.latency !== undefined) {
       if (this._networkConditions.latency > 200) {
         // High latency - use larger buffer

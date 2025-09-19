@@ -17,6 +17,14 @@
   ],
   "coverageDirectory": "coverage",
   "coverageReporters": ["text", "lcov", "html"],
+  "coverageThreshold": {
+    "global": {
+      "lines": 100,
+      "functions": 100,
+      "statements": 100,
+      "branches": 95
+    }
+  },
   "testPathIgnorePatterns": [
     "/node_modules/",
     "/build/",
