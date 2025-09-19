@@ -22,7 +22,7 @@ buildscript {
     if (ext.has("kotlinVersion")) {
       ext.kotlinVersion()
     } else {
-      ext.safeExtGet("kotlinVersion", "1.8.10")
+      ext.safeExtGet("kotlinVersion", "1.9.24")
     }
   }
 
@@ -51,24 +51,22 @@ afterEvaluate {
 }
 
 android {
-  compileSdkVersion safeExtGet("compileSdkVersion", 33)
+  compileSdkVersion safeExtGet("compileSdkVersion", 35)
 
   def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
-  if (agpVersion.tokenize('.')[0].toInteger() < 8) {
-    compileOptions {
-      sourceCompatibility JavaVersion.VERSION_11
-      targetCompatibility JavaVersion.VERSION_11
-    }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
 
-    kotlinOptions {
-      jvmTarget = JavaVersion.VERSION_11.majorVersion
-    }
+  kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_17.majorVersion
   }
 
   namespace "expo.modules.streamer"
   defaultConfig {
-    minSdkVersion safeExtGet("minSdkVersion", 21)
-    targetSdkVersion safeExtGet("targetSdkVersion", 34)
+    minSdkVersion safeExtGet("minSdkVersion", 23)
+    targetSdkVersion safeExtGet("targetSdkVersion", 35)
     versionCode 1
     versionName "1.0.0"
   }
@@ -88,15 +86,15 @@ repositories {
 
 dependencies {
   implementation project(':expo-modules-core')
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
-  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
-  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${getKotlinVersion()}"
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1'
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
   
   // Test dependencies
   testImplementation 'junit:junit:4.13.2'
-  testImplementation 'org.mockito:mockito-core:4.11.0'
-  testImplementation 'org.mockito.kotlin:mockito-kotlin:4.1.0'
-  testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4'
+  testImplementation 'org.mockito:mockito-core:5.11.0'
+  testImplementation 'org.mockito.kotlin:mockito-kotlin:5.2.1'
+  testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1'
   testImplementation 'androidx.test:core:1.5.0'
   testImplementation 'androidx.test.ext:junit:1.1.5'
   

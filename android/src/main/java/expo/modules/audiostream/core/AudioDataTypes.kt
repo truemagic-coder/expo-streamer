@@ -100,8 +100,24 @@ enum class AudioComponentState {
     READY,
     ACTIVE,
     PAUSED,
+    STOPPING,
     ERROR,
-    DESTROYED
+    DESTROYED;
+    
+    val isOperational: Boolean
+        get() = this in listOf(READY, ACTIVE, PAUSED)
+    
+    val canStart: Boolean
+        get() = this == READY
+    
+    val canStop: Boolean
+        get() = this in listOf(ACTIVE, PAUSED)
+    
+    val canPause: Boolean
+        get() = this == ACTIVE
+    
+    val canResume: Boolean
+        get() = this == PAUSED
 }
 
 /**

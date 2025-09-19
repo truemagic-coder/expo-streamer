@@ -103,7 +103,7 @@ sealed class AudioOperationResult<out T> {
 /**
  * Error types for audio operations (Comprehensive error handling)
  */
-sealed class AudioModuleError(val message: String, val cause: Throwable? = null) : Exception(message, cause) {
+sealed class AudioModuleError(override val message: String, override val cause: Throwable? = null) : Exception(message, cause) {
     object AudioRecorderUnavailable : AudioModuleError("Audio recorder is not available")
     object AudioPlaybackUnavailable : AudioModuleError("Audio playback is not available")
     object WavPlayerUnavailable : AudioModuleError("WAV player is not available")
@@ -115,34 +115,6 @@ sealed class AudioModuleError(val message: String, val cause: Throwable? = null)
 }
 
 // MARK: - Component State Management
-
-/**
- * Enum representing the state of audio components (State Machine Pattern)
- */
-enum class AudioComponentState {
-    UNINITIALIZED,
-    INITIALIZING,
-    READY,
-    ACTIVE,
-    PAUSED,
-    STOPPING,
-    ERROR;
-    
-    val isOperational: Boolean
-        get() = this in listOf(READY, ACTIVE, PAUSED)
-    
-    val canStart: Boolean
-        get() = this == READY
-    
-    val canStop: Boolean
-        get() = this in listOf(ACTIVE, PAUSED)
-    
-    val canPause: Boolean
-        get() = this == ACTIVE
-    
-    val canResume: Boolean
-        get() = this == PAUSED
-}
 
 /**
  * Thread-safe state management for audio components (Single Responsibility)
@@ -183,11 +155,12 @@ class AudioStateManager {
         return when (from) {
             AudioComponentState.UNINITIALIZED -> to in listOf(AudioComponentState.INITIALIZING, AudioComponentState.ERROR)
             AudioComponentState.INITIALIZING -> to in listOf(AudioComponentState.READY, AudioComponentState.ERROR)
-            AudioComponentState.READY -> to in listOf(AudioComponentState.ACTIVE, AudioComponentState.ERROR)
+            AudioComponentState.READY -> to in listOf(AudioComponentState.ACTIVE, AudioComponentState.ERROR, AudioComponentState.DESTROYED)
             AudioComponentState.ACTIVE -> to in listOf(AudioComponentState.PAUSED, AudioComponentState.STOPPING, AudioComponentState.ERROR)
             AudioComponentState.PAUSED -> to in listOf(AudioComponentState.ACTIVE, AudioComponentState.STOPPING, AudioComponentState.ERROR)
-            AudioComponentState.STOPPING -> to in listOf(AudioComponentState.READY, AudioComponentState.ERROR)
-            AudioComponentState.ERROR -> to in listOf(AudioComponentState.UNINITIALIZED, AudioComponentState.INITIALIZING)
+            AudioComponentState.STOPPING -> to in listOf(AudioComponentState.READY, AudioComponentState.ERROR, AudioComponentState.DESTROYED)
+            AudioComponentState.ERROR -> to in listOf(AudioComponentState.UNINITIALIZED, AudioComponentState.INITIALIZING, AudioComponentState.DESTROYED)
+            AudioComponentState.DESTROYED -> false // Terminal state
         }
     }
 }
