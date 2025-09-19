@@ -63,11 +63,20 @@ jobs:
     - name: Build package
       run: npm run build
 
+    - name: Build plugin
+      run: npm run build:plugin
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: build/
+
+    - name: Upload plugin artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: plugin-artifacts
+        path: plugin/build/
 
   security-audit:
     name: Security Audit
