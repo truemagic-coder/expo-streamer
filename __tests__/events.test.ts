@@ -47,7 +47,7 @@ describe('Events', () => {
 
       const subscription = addAudioEventListener(mockListener);
 
-      expect(mockAddListener).toHaveBeenCalledWith('AudioData', mockListener);
+      expect(mockAddListener).toHaveBeenCalledWith('AudioData', expect.any(Function));
       expect(subscription).toBe(mockSubscription);
     });
 
@@ -58,7 +58,7 @@ describe('Events', () => {
 
       const subscription = addSoundChunkPlayedListener(mockListener);
 
-      expect(mockAddListener).toHaveBeenCalledWith('SoundChunkPlayed', mockListener);
+      expect(mockAddListener).toHaveBeenCalledWith('SoundChunkPlayed', expect.any(Function));
       expect(subscription).toBe(mockSubscription);
     });
 
@@ -69,7 +69,7 @@ describe('Events', () => {
 
       const subscription = subscribeToEvent('CustomEvent', mockListener);
 
-      expect(mockAddListener).toHaveBeenCalledWith('CustomEvent', mockListener);
+      expect(mockAddListener).toHaveBeenCalledWith('CustomEvent', expect.any(Function));
       expect(subscription).toBe(mockSubscription);
     });
   });

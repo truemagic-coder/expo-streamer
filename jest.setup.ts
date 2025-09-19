@@ -2,7 +2,10 @@
 declare var global: any;
 
 // Jest setup file
-import '@testing-library/jest-native/extend-expect';
+// Note: @testing-library/jest-native is deprecated. 
+// Built-in Jest matchers from @testing-library/react-native are automatically
+// available when importing from @testing-library/react-native, but since we're
+// testing pure TypeScript classes, we only need standard Jest matchers.
 
 // Mock React Native modules
 jest.mock('react-native', () => ({

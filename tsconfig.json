@@ -5,7 +5,7 @@
     "outDir": "./build",
     "target": "ES2018",
     "lib": ["ES2018", "DOM"],
-    "module": "CommonJS",
+    "module": "ES2020",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

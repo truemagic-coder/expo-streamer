@@ -1,4 +1,4 @@
-import { Subscription } from 'expo-modules-core';
+import { EventSubscription } from 'expo-modules-core';
 import ExpoPlayAudioStreamModule from './ExpoPlayAudioStreamModule';
 import {
   AudioDataEvent,
@@ -30,7 +30,6 @@ import {
 } from './types';
 
 import { AudioBufferManager } from './audio';
-import { BufferManagerAdaptive } from './audio/BufferManagerAdaptive';
 
 import {
   addAudioEventListener,
@@ -39,8 +38,6 @@ import {
   SoundChunkPlayedEventPayload,
   AudioEvents,
   subscribeToEvent,
-  DeviceReconnectedReason,
-  DeviceReconnectedEventPayload,
 } from './events';
 
 const SuspendSoundEventTurnId = 'suspend-sound-events';
@@ -49,11 +46,6 @@ export class ExpoPlayAudioStream {
   // Static buffer manager instances for different turn IDs
   private static _bufferManagers: {
     [turnId: string]: AudioBufferManager;
-  } = {};
-
-  // Static smart buffer manager instances for different turn IDs
-  private static _smartBufferManagers: {
-    [turnId: string]: BufferManagerAdaptive;
   } = {};
 
   /**
@@ -76,18 +68,18 @@ export class ExpoPlayAudioStream {
   /**
    * Starts microphone recording.
    * @param {RecordingConfig} recordingConfig - Configuration for the recording.
-   * @returns {Promise<{recordingResult: StartRecordingResult, subscription: Subscription}>} A promise that resolves to an object containing the recording result and a subscription to audio events.
+   * @returns {Promise<{recordingResult: StartRecordingResult, subscription: EventSubscription}>} A promise that resolves to an object containing the recording result and a subscription to audio events.
    * @throws {Error} If the recording fails to start.
    */
   static async startRecording(
     recordingConfig: RecordingConfig
   ): Promise<{
     recordingResult: StartRecordingResult;
-    subscription?: Subscription;
+    subscription?: EventSubscription;
   }> {
     const { onAudioStream, ...options } = recordingConfig;
 
-    let subscription: Subscription | undefined;
+    let subscription: EventSubscription | undefined;
 
     if (
       onAudioStream &&
@@ -498,16 +490,16 @@ export class ExpoPlayAudioStream {
   /**
    * Starts microphone streaming.
    * @param {RecordingConfig} recordingConfig - The recording configuration.
-   * @returns {Promise<{recordingResult: StartRecordingResult, subscription: Subscription}>} A promise that resolves to an object containing the recording result and a subscription to audio events.
+   * @returns {Promise<{recordingResult: StartRecordingResult, subscription: EventSubscription}>} A promise that resolves to an object containing the recording result and a subscription to audio events.
    * @throws {Error} If the recording fails to start.
    */
   static async startMicrophone(
     recordingConfig: RecordingConfig
   ): Promise<{
     recordingResult: StartRecordingResult;
-    subscription?: Subscription;
+    subscription?: EventSubscription;
   }> {
-    let subscription: Subscription | undefined;
+    let subscription: EventSubscription | undefined;
     try {
       const { onAudioStream, ...options } = recordingConfig;
 
@@ -593,7 +585,7 @@ export class ExpoPlayAudioStream {
     onMicrophoneStream: (
       event: AudioDataEvent
     ) => Promise<void>
-  ): Subscription {
+  ): EventSubscription {
     return addAudioEventListener(
       async (event: AudioEventPayload) => {
         const {
@@ -632,7 +624,7 @@ export class ExpoPlayAudioStream {
     onSoundChunkPlayed: (
       event: SoundChunkPlayedEventPayload
     ) => Promise<void>
-  ): Subscription {
+  ): EventSubscription {
     return addSoundChunkPlayedListener(onSoundChunkPlayed);
   }
 
@@ -640,12 +632,12 @@ export class ExpoPlayAudioStream {
    * Subscribes to events emitted by the audio stream module, for advanced use cases.
    * @param eventName - The name of the event to subscribe to.
    * @param onEvent - Callback function that will be called when the event is emitted.
-   * @returns {Subscription} A subscription object that can be used to unsubscribe from the events.
+   * @returns {EventSubscription} A subscription object that can be used to unsubscribe from the events.
    */
   static subscribe<T extends unknown>(
     eventName: string,
     onEvent: (event: T | undefined) => Promise<void>
-  ): Subscription {
+  ): EventSubscription {
     return subscribeToEvent(eventName, onEvent);
   }
 
@@ -735,6 +727,9 @@ export {
   SmartBufferMode,
   NetworkConditions,
 };
+
+// Re-export EventSubscription from expo-modules-core for convenience
+export type { EventSubscription } from 'expo-modules-core';
 
 // Export audio processing modules
 export {
