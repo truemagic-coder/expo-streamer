@@ -1,10 +1,10 @@
 # 🎙️ expo-streamer
 
-[![npm version](https://badge.fury.io/js/expo-streamer.svg)](https://badge.fury.io/js/expo-streamer)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/truemagic-coder/expo-streamer/workflows/ci/badge.svg)](https://github.com/truemagic-coder/expo-streamer/actions)
-[![codecov](https://codecov.io/gh/truemagic-coder/expo-streamer/branch/main/graph/badge.svg)](https://codecov.io/gh/truemagic-coder/expo-streamer)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
+[![npm version](https://badge.fury.io/js/expo-streamer.svg)](https://badge.fury.io/js/expo-streamer)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/truemagic-coder/expo-streamer/ci.yml?branch=main)](https://github.com/truemagic-coder/expo-streamer/actions/workflows/ci.yml)
+[![codecov](https://img.shields.io/codecov/c/github/truemagic-coder/expo-streamer/main.svg)](https://codecov.io/gh/truemagic-coder/solana-agent)
 
 **Enterprise-grade audio streaming and recording for Expo applications**
 

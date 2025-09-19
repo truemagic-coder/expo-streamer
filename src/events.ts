@@ -8,6 +8,7 @@ import ExpoPlayAudioStreamModule from './ExpoPlayAudioStreamModule'
 
 const emitter = new EventEmitter(ExpoPlayAudioStreamModule)
 
+/* istanbul ignore next - event handler is for native module setup */
 emitter.addListener('SoundChunkPlayed', (event: SoundChunkPlayedEventPayload) => {})
 
 export interface AudioEventPayload {

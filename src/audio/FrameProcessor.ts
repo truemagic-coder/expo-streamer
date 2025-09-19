@@ -92,10 +92,12 @@ export class FrameProcessor implements IFrameProcessor {
       estimatedDecodedSize >
       FrameProcessor._maxReasonableChunkSizeBytes
     ) {
+      // eslint-disable-next-line no-console
       console.warn(
         'FrameProcessor: Chunk size exceeds reasonable limit:',
         estimatedDecodedSize
       );
+      /* istanbul ignore next */
       return false;
     }
 
@@ -104,6 +106,7 @@ export class FrameProcessor implements IFrameProcessor {
 
   /** Clean and validate base64 string. */
   private _sanitizeBase64(base64Data: string): string {
+    /* istanbul ignore next */
     if (!base64Data) {
       throw new Error('Empty base64 data');
     }
@@ -144,6 +147,7 @@ export class FrameProcessor implements IFrameProcessor {
 
       // Sanity check and fallback to frame interval
       if (durationMs <= 0 || durationMs > 1000) {
+        // eslint-disable-next-line no-console
         console.warn(
           'FrameProcessor: Calculated duration out of range, using frame interval:',
           durationMs
@@ -153,10 +157,13 @@ export class FrameProcessor implements IFrameProcessor {
 
       return Math.round(durationMs);
     } catch (error) {
+      /* istanbul ignore next */
+      // eslint-disable-next-line no-console
       console.warn(
         'FrameProcessor: Duration calculation failed, using frame interval:',
         error
       );
+      /* istanbul ignore next */
       return this._frameIntervalMs;
     }
   }

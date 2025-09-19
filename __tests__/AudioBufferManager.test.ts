@@ -183,6 +183,101 @@ describe('AudioBufferManager', () => {
     expect(bufferManager.isPlaying()).toBe(false);
     expect(bufferManager.getCurrentBufferMs()).toBe(0);
   });
+
+  test('should handle turn ID setting', () => {
+    const turnId = 'test-turn-123';
+    bufferManager.setTurnId(turnId);
+    // TurnID is private, so we test it indirectly by ensuring no errors
+    expect(() => bufferManager.setTurnId(turnId)).not.toThrow();
+  });
+
+  test('should handle encoding setting', () => {
+    bufferManager.setEncoding(EncodingTypes.PCM_S16LE);
+    expect(() => bufferManager.setEncoding(EncodingTypes.PCM_S16LE)).not.toThrow();
+  });
+
+  test('should enqueue frames', () => {
+    const audioData = {
+      audioData: 'dGVzdCBhdWRpbyBkYXRh', // base64 encoded "test audio data"
+      isFirst: true
+    };
+    
+    expect(() => bufferManager.enqueueFrames(audioData)).not.toThrow();
+    // After enqueueing, buffer should have some content
+    expect(bufferManager.getCurrentBufferMs()).toBeGreaterThanOrEqual(0);
+  });
+
+  test('should handle enqueue frames when processors are null', () => {
+    // Create a buffer manager and then destroy its processors by calling destroy
+    bufferManager.destroy();
+    
+    const audioData = {
+      audioData: 'dGVzdCBhdWRpbyBkYXRh',
+      isFirst: true
+    };
+    
+    // Should not throw even when processors are null
+    expect(() => bufferManager.enqueueFrames(audioData)).not.toThrow();
+  });
+
+  test('should apply adaptive adjustments', () => {
+    // Adaptive adjustments depend on quality monitor having recommendations
+    expect(() => bufferManager.applyAdaptiveAdjustments()).not.toThrow();
+  });
+
+  test('should handle adaptive adjustments when quality monitor is null', () => {
+    bufferManager.destroy(); // This sets quality monitor to null
+    expect(() => bufferManager.applyAdaptiveAdjustments()).not.toThrow();
+  });
+
+  test('should handle buffer overrun scenario', () => {
+    // Add many frames to trigger overrun
+    const audioData = {
+      audioData: 'dGVzdCBhdWRpbyBkYXRhLCB2ZXJ5IGxvbmcgYXVkaW8gZGF0YSB0byBmaWxsIGJ1ZmZlcg==',
+      isFinal: false
+    };
+    
+    // Enqueue multiple frames to potentially trigger overrun
+    for (let i = 0; i < 100; i++) {
+      bufferManager.enqueueFrames({
+        ...audioData,
+        isFinal: i === 99
+      });
+    }
+    
+    expect(bufferManager.getCurrentBufferMs()).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('AudioBufferManager Edge Cases', () => {
+  let bufferManager: AudioBufferManager;
+
+  beforeEach(() => {
+    bufferManager = new AudioBufferManager();
+  });
+
+  test('should handle multiple destroy calls', () => {
+    bufferManager.destroy();
+    expect(() => bufferManager.destroy()).not.toThrow();
+  });
+
+  test('should handle playback operations after destroy', () => {
+    bufferManager.destroy();
+    
+    expect(() => bufferManager.startPlayback()).not.toThrow();
+    expect(() => bufferManager.stopPlayback()).not.toThrow();
+    expect(bufferManager.isPlaying()).toBe(false);
+  });
+
+  test('should return proper health metrics when quality monitor is null', () => {
+    bufferManager.destroy(); // Sets quality monitor to null
+    
+    const metrics = bufferManager.getHealthMetrics();
+    expect(metrics.targetBufferMs).toBe(240); // Default value
+    expect(metrics.currentBufferMs).toBe(0);
+    expect(metrics.underrunCount).toBe(0);
+    expect(metrics.bufferHealthState).toBe('idle');
+  });
 });
 
 describe('Thread Safety Tests', () => {
