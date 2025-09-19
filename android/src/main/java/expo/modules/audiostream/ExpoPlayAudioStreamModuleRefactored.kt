@@ -19,6 +19,7 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.audiostream.core.*
+import expo.modules.audiostream.core.AudioInterfaces.EventSenderManaging
 import kotlinx.coroutines.*
 
 /**
@@ -30,7 +31,7 @@ import kotlinx.coroutines.*
  * - Interface Segregation: Focused interfaces for each concern
  * - Dependency Inversion: Depends on abstractions, not concrete classes
  */
-class ExpoPlayAudioStreamModuleRefactored : Module(), EventSender {
+class ExpoPlayAudioStreamModuleRefactored : Module(), EventSender, EventSenderManaging {
     
     // MARK: - Dependencies (Dependency Injection)
     private lateinit var componentManager: AudioComponentManager
@@ -114,7 +115,9 @@ class ExpoPlayAudioStreamModuleRefactored : Module(), EventSender {
         )
         
         OnCreate {
-            initializeModule()
+            moduleScope.launch {
+                initializeModule()
+            }
         }
         
         OnDestroy {
@@ -317,10 +320,10 @@ class ExpoPlayAudioStreamModuleRefactored : Module(), EventSender {
         }
     }
     
-    private fun parseRecordingConfig(options: Map<String, Any?>): RecordingConfig {
+    private fun parseRecordingConfig(options: Map<String, Any?>): expo.modules.audiostream.core.RecordingConfig {
         // Parse options into RecordingConfig
         // Implementation details...
-        return RecordingConfig()
+        return expo.modules.audiostream.core.RecordingConfig()
     }
     
     // MARK: - AudioOperationResult Extension

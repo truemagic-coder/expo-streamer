@@ -67,7 +67,7 @@ class SafeAudioRecorderManager(
     
     override fun startRecording(config: RecordingConfig, promise: expo.modules.kotlin.Promise) {
         if (!stateManager.transitionTo(AudioComponentState.ACTIVE)) {
-            promise.reject("INVALID_STATE", "Cannot start recording in current state: ${stateManager.currentState}")
+            promise.reject("INVALID_STATE", "Cannot start recording in current state: ${stateManager.currentState}", null)
             return
         }
         
@@ -81,7 +81,7 @@ class SafeAudioRecorderManager(
     
     override fun stopRecording(promise: expo.modules.kotlin.Promise) {
         if (!stateManager.transitionTo(AudioComponentState.STOPPING)) {
-            promise.reject("INVALID_STATE", "Cannot stop recording in current state: ${stateManager.currentState}")
+            promise.reject("INVALID_STATE", "Cannot stop recording in current state: ${stateManager.currentState}", null)
             return
         }
         
@@ -94,23 +94,21 @@ class SafeAudioRecorderManager(
         }
     }
     
-    override fun pauseRecording() {
-        if (stateManager.transitionTo(AudioComponentState.PAUSED)) {
-            try {
-                delegate.pauseRecording()
-            } catch (e: Exception) {
-                stateManager.transitionToError("Recording pause failed: ${e.message}")
-            }
+    override fun pauseRecording(promise: expo.modules.kotlin.Promise) {
+        try {
+                delegate.pauseRecording(promise)
+        } catch (e: Exception) {
+            stateManager.transitionToError("Pause recording failed: ${e.message}")
+            // No need to reject here as delegate should handle it
         }
     }
     
-    override fun resumeRecording() {
-        if (stateManager.transitionTo(AudioComponentState.ACTIVE)) {
-            try {
-                delegate.resumeRecording()
-            } catch (e: Exception) {
-                stateManager.transitionToError("Recording resume failed: ${e.message}")
-            }
+    override fun resumeRecording(promise: expo.modules.kotlin.Promise) {
+        try {
+                delegate.resumeRecording(promise)
+        } catch (e: Exception) {
+            stateManager.transitionToError("Resume recording failed: ${e.message}")
+            // No need to reject here as delegate should handle it
         }
     }
     

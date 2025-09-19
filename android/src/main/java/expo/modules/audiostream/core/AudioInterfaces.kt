@@ -18,8 +18,8 @@ import android.os.Bundle
 interface AudioRecorderManaging {
     fun startRecording(config: RecordingConfig, promise: Promise)
     fun stopRecording(promise: Promise)
-    fun pauseRecording()
-    fun resumeRecording()
+    fun pauseRecording(promise: Promise)
+    fun resumeRecording(promise: Promise)
     fun toggleSilence()
     fun isRecording(): Boolean
     fun destroy()
