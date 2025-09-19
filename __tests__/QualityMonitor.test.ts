@@ -435,5 +435,27 @@ describe('QualityMonitor', () => {
         qualityMonitor.getMetrics();
       }).not.toThrow();
     });
+
+    test('should track adaptive adjustments when non-zero adjustment is made', () => {
+      // Add sufficient history for adjustment calculation
+      const baseTime = Date.now();
+      for (let i = 0; i < 15; i++) {
+        qualityMonitor.recordFrameArrival(baseTime + i * frameIntervalMs);
+      }
+      
+      const initialCount = qualityMonitor.getMetrics().adaptiveAdjustmentsCount;
+      
+      // Create multiple underruns to ensure a positive adjustment
+      qualityMonitor.recordUnderrun();
+      qualityMonitor.recordUnderrun();
+      qualityMonitor.recordUnderrun(); // 3 underruns
+      
+      const adjustment = qualityMonitor.getRecommendedAdjustment();
+      const finalCount = qualityMonitor.getMetrics().adaptiveAdjustmentsCount;
+      
+      // The adjustment should be non-zero and the count should be incremented
+      expect(adjustment).not.toBe(0);
+      expect(finalCount).toBe(initialCount + 1);
+    });
   });
 });

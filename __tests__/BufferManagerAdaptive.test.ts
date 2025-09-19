@@ -226,4 +226,57 @@ describe('BufferManagerAdaptive', () => {
       expect(adaptiveManager.isBufferingEnabled()).toBe(true);
     });
   });
+
+  describe('Time-based Re-evaluation', () => {
+    test('should re-evaluate buffering need after 5 seconds', async () => {
+      // Mock Date.now to return a large value (> 5000)
+      const originalDateNow = Date.now;
+      Date.now = jest.fn(() => 10000); // Much larger than 5000
+      
+      const config: SmartBufferConfig = { 
+        mode: 'adaptive',
+        networkConditions: { latency: 250, jitter: 50 }
+      };
+      adaptiveManager = new BufferManagerAdaptive(config, turnId);
+      
+      // Process chunk - should trigger the time condition since Date.now() - 0 > 5000
+      const audioData = { audioData: 'dGVzdA==', isFirst: true, isFinal: false };
+      await adaptiveManager.processAudioChunk(audioData, mockDirectPlayCallback);
+      
+      // Restore Date.now
+      Date.now = originalDateNow;
+      
+      expect(adaptiveManager.isBufferingEnabled()).toBe(true);
+    });
+  });
+
+  describe('Disable Buffering Coverage', () => {
+    test('should properly disable buffering when buffer manager exists', async () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      
+      // Use a configuration that will definitely enable buffering
+      const config: SmartBufferConfig = { 
+        mode: 'aggressive',
+        networkConditions: { latency: 500, jitter: 200, packetLoss: 5 }
+      };
+      adaptiveManager = new BufferManagerAdaptive(config, turnId);
+      
+      // Process audio chunk which should trigger buffering due to poor network conditions
+      const audioData = { audioData: 'dGVzdA==', isFirst: true, isFinal: false };
+      await adaptiveManager.processAudioChunk(audioData, mockDirectPlayCallback);
+      
+      // Verify buffering is enabled
+      expect(adaptiveManager.isBufferingEnabled()).toBe(true);
+      
+      // Now call destroy which should trigger _disableBuffering with a non-null buffer manager
+      adaptiveManager.destroy();
+      
+      // This should have logged the disable buffering message
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`[SmartBufferManager] Disabled buffering for turnId: ${turnId}`)
+      );
+      
+      consoleSpy.mockRestore();
+    });
+  });
 });

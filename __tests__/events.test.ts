@@ -74,6 +74,71 @@ describe('Events', () => {
     });
   });
 
+  describe('Error Handling', () => {
+    test('should handle errors in audio event listener', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const errorListener = jest.fn().mockRejectedValue(new Error('Test error'));
+      const mockSubscription = { remove: jest.fn() };
+      mockAddListener.mockReturnValue(mockSubscription);
+
+      addAudioEventListener(errorListener);
+      
+      // Get the wrapped listener that was passed to addListener
+      const wrappedListener = mockAddListener.mock.calls[0][1];
+      
+      // Call the wrapped listener with test data
+      wrappedListener({ fileUri: 'test', position: 0, totalSize: 100 });
+
+      // Wait for the promise to be handled
+      return new Promise(resolve => setTimeout(resolve, 0)).then(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(new Error('Test error'));
+        consoleSpy.mockRestore();
+      });
+    });
+
+    test('should handle errors in sound chunk played listener', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const errorListener = jest.fn().mockRejectedValue(new Error('Chunk error'));
+      const mockSubscription = { remove: jest.fn() };
+      mockAddListener.mockReturnValue(mockSubscription);
+
+      addSoundChunkPlayedListener(errorListener);
+      
+      // Get the wrapped listener that was passed to addListener
+      const wrappedListener = mockAddListener.mock.calls[0][1];
+      
+      // Call the wrapped listener with test data
+      wrappedListener({ isFinal: true });
+
+      // Wait for the promise to be handled
+      return new Promise(resolve => setTimeout(resolve, 0)).then(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(new Error('Chunk error'));
+        consoleSpy.mockRestore();
+      });
+    });
+
+    test('should handle errors in custom event listener', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const errorListener = jest.fn().mockRejectedValue(new Error('Custom error'));
+      const mockSubscription = { remove: jest.fn() };
+      mockAddListener.mockReturnValue(mockSubscription);
+
+      subscribeToEvent('CustomEvent', errorListener);
+      
+      // Get the wrapped listener that was passed to addListener
+      const wrappedListener = mockAddListener.mock.calls[0][1];
+      
+      // Call the wrapped listener with test data
+      wrappedListener({ customData: 'test' });
+
+      // Wait for the promise to be handled
+      return new Promise(resolve => setTimeout(resolve, 0)).then(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(new Error('Custom error'));
+        consoleSpy.mockRestore();
+      });
+    });
+  });
+
   describe('Type Interfaces', () => {
     test('should support AudioEventPayload interface', () => {
       const eventPayload: AudioEventPayload = {

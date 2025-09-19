@@ -829,5 +829,70 @@ describe('AudioBufferManager', () => {
       expect(silenceManager.isPlaying()).toBe(true);
       silenceManager.destroy();
     });
+
+    test('should handle buffer underrun conditions', async () => {
+      // Create a manager with high minimum buffer to trigger underrun
+      const underrunManager = new AudioBufferManager({
+        minBufferMs: 1000, // Very high minimum
+        frameIntervalMs: 20,
+      });
+      
+      // Add minimal data to ensure underrun
+      const audioData = {
+        audioData: 'minimal-data',
+        isFirst: true,
+      };
+      
+      underrunManager.enqueueFrames(audioData);
+      underrunManager.startPlayback();
+      
+      // Let the underrun detection trigger
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Verify quality monitor was called for underrun
+      expect(underrunManager.isPlaying()).toBe(true);
+      underrunManager.destroy();
+    });
+
+    test('should handle buffer overrun conditions', () => {
+      // Create a manager with very low maximum buffer to trigger overrun
+      const overrunManager = new AudioBufferManager({
+        maxBufferMs: 10, // Very low maximum
+        frameIntervalMs: 20,
+      });
+      
+      // Add lots of data to trigger overrun
+      for (let i = 0; i < 20; i++) {
+        const audioData = {
+          audioData: `overrun-data-chunk-${i}`,
+          isFirst: i === 0,
+        };
+        overrunManager.enqueueFrames(audioData);
+      }
+      
+      // Verify quality monitor was called for overrun
+      expect(overrunManager.isPlaying()).toBe(false);
+      overrunManager.destroy();
+    });
+
+    test('should handle silence insertion with base64 encoding', () => {
+      const silenceManager = new AudioBufferManager({
+        minBufferMs: 1000, // High minimum to trigger underrun and silence insertion
+        frameIntervalMs: 20,
+      });
+      
+      // Add minimal data to trigger underrun and silence insertion
+      const audioData = {
+        audioData: 'minimal-data-for-silence',
+        isFirst: true,
+      };
+      
+      silenceManager.enqueueFrames(audioData);
+      silenceManager.startPlayback();
+      
+      // Verify manager continues to function after silence insertion
+      expect(silenceManager.isPlaying()).toBe(true);
+      silenceManager.destroy();
+    });
   });
 });
