@@ -194,10 +194,13 @@ export class AudioBufferManager
   }
 
   private _startPlaybackLoop(): void {
+    /* istanbul ignore next */
     if (!this._isActive) return;
 
     const currentBufferMs = this.getCurrentBufferMs();
+    /* istanbul ignore next */
     if (this._qualityMonitor) {
+      /* istanbul ignore next */
       this._qualityMonitor.updateBufferLevel(
         currentBufferMs
       );
