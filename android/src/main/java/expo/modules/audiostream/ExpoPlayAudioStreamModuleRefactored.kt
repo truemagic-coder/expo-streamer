@@ -146,8 +146,7 @@ class ExpoPlayAudioStreamModuleRefactored : Module(), EventSender, EventSenderMa
             moduleScope.launch {
                 handleSafeOperation(promise) {
                     val recorder = componentManager.getAudioRecorderManager().getOrThrow()
-                    recorder.pauseRecording()
-                    promise.resolve(null)
+                    recorder.pauseRecording(promise)
                 }
             }
         }
@@ -156,8 +155,7 @@ class ExpoPlayAudioStreamModuleRefactored : Module(), EventSender, EventSenderMa
             moduleScope.launch {
                 handleSafeOperation(promise) {
                     val recorder = componentManager.getAudioRecorderManager().getOrThrow()
-                    recorder.resumeRecording()
-                    promise.resolve(null)
+                    recorder.resumeRecording(promise)
                 }
             }
         }
