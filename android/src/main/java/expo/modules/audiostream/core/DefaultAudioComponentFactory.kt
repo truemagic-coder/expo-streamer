@@ -19,7 +19,7 @@ class DefaultAudioComponentFactory(
             permissionUtils = PermissionUtils(context),
             audioDataEncoder = AudioDataEncoder(),
             eventSender = eventSender ?: SafeEventSender(), // Use SafeEventSender which implements both interfaces
-            audioEffectsManager = AudioEffectsManager() // Create concrete AudioEffectsManager instance
+            audioEffectsManager = SafeAudioEffectsManager() // Pass the interface implementation
         )
     }
     
