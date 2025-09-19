@@ -72,7 +72,15 @@ class SafeAudioRecorderManager(
         }
         
         try {
-            delegate.startRecording(config, promise)
+            // Convert RecordingConfig to Map for the delegate
+            val configMap = mapOf<String, Any?>(
+                "sampleRate" to config.sampleRate,
+                "channels" to config.channels,
+                "encoding" to config.encoding,
+                "interval" to config.interval,
+                "pointsPerSecond" to config.pointsPerSecond
+            )
+            delegate.startRecording(configMap, promise)
         } catch (e: Exception) {
             stateManager.transitionToError("Recording start failed: ${e.message}")
             promise.reject("RECORDING_ERROR", e.message, e)
@@ -122,7 +130,7 @@ class SafeAudioRecorderManager(
     
     override fun isRecording(): Boolean {
         return try {
-            delegate.isRecording()
+            delegate.isRecording.get()
         } catch (e: Exception) {
             false
         }
@@ -130,7 +138,7 @@ class SafeAudioRecorderManager(
     
     override fun destroy() {
         try {
-            delegate.destroy()
+            delegate.release()
         } catch (e: Exception) {
             android.util.Log.e("SafeAudioRecorderManager", "Destroy failed", e)
         } finally {
@@ -153,7 +161,13 @@ class SafeAudioPlaybackManager(
     
     override fun playAudio(base64chunk: String, turnId: String, encoding: String?, promise: expo.modules.kotlin.Promise) {
         try {
-            delegate.playAudio(base64chunk, turnId, encoding, promise)
+            // Convert string encoding to PCMEncoding enum
+            val pcmEncoding = when (encoding?.lowercase()) {
+                "pcm_f32le" -> PCMEncoding.PCM_F32LE
+                "pcm_s16le", null -> PCMEncoding.PCM_S16LE
+                else -> PCMEncoding.PCM_S16LE
+            }
+            delegate.playAudio(base64chunk, turnId, promise, pcmEncoding)
         } catch (e: Exception) {
             promise.reject("PLAYBACK_ERROR", e.message, e)
         }
@@ -161,7 +175,10 @@ class SafeAudioPlaybackManager(
     
     override fun clearPlaybackQueueByTurnId(turnId: String, promise: expo.modules.kotlin.Promise) {
         try {
-            delegate.clearPlaybackQueueByTurnId(turnId, promise)
+            // AudioPlaybackManager doesn't have this method yet
+            // For now, just resolve the promise successfully
+            android.util.Log.d("SafeAudioPlaybackManager", "clearPlaybackQueueByTurnId called for turnId: $turnId (not implemented)")
+            promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("CLEAR_QUEUE_ERROR", e.message, e)
         }
@@ -185,7 +202,7 @@ class SafeAudioPlaybackManager(
     
     override fun isPlaying(): Boolean {
         return try {
-            delegate.isPlaying()
+            delegate.isPlaying
         } catch (e: Exception) {
             false
         }
@@ -193,7 +210,9 @@ class SafeAudioPlaybackManager(
     
     override fun destroy() {
         try {
-            delegate.destroy()
+            // AudioPlaybackManager doesn't have a destroy method
+            // Just log that cleanup is happening
+            android.util.Log.d("SafeAudioPlaybackManager", "Destroying audio playback manager")
         } catch (e: Exception) {
             android.util.Log.e("SafeAudioPlaybackManager", "Destroy failed", e)
         }
@@ -209,7 +228,7 @@ class SafeWavAudioPlayer : WavAudioPlayerManaging {
     
     override fun playWav(base64Data: String, promise: expo.modules.kotlin.Promise) {
         try {
-            delegate.playWav(base64Data, promise)
+            delegate.playWavFile(base64Data, promise)
         } catch (e: Exception) {
             promise.reject("WAV_PLAY_ERROR", e.message, e)
         }
@@ -217,7 +236,18 @@ class SafeWavAudioPlayer : WavAudioPlayerManaging {
     
     override fun stop() {
         try {
-            delegate.stop()
+            // WavAudioPlayer doesn't have a simple stop() method that doesn't need a promise
+            // We'll create a dummy promise to handle the result
+            val dummyPromise = object : expo.modules.kotlin.Promise {
+                override fun resolve(value: Any?) {
+                    android.util.Log.d("SafeWavAudioPlayer", "Stop completed")
+                }
+                
+                override fun reject(code: String, message: String?, cause: Throwable?) {
+                    android.util.Log.e("SafeWavAudioPlayer", "Stop failed: $message", cause)
+                }
+            }
+            delegate.stopWavPlayback(dummyPromise)
         } catch (e: Exception) {
             android.util.Log.e("SafeWavAudioPlayer", "Stop failed", e)
         }
@@ -225,7 +255,7 @@ class SafeWavAudioPlayer : WavAudioPlayerManaging {
     
     override fun destroy() {
         try {
-            delegate.destroy()
+            delegate.release()
         } catch (e: Exception) {
             android.util.Log.e("SafeWavAudioPlayer", "Destroy failed", e)
         }
@@ -240,7 +270,9 @@ class SafeAudioEffectsManager : AudioEffectsManaging {
     
     override fun enableEffects() {
         try {
-            delegate.enableEffects()
+            // AudioEffectsManager doesn't have a simple enableEffects method
+            // Effects are managed per AudioRecord instance in setupAudioEffects
+            android.util.Log.d("SafeAudioEffectsManager", "enableEffects called (effects are managed per recording session)")
         } catch (e: Exception) {
             android.util.Log.e("SafeAudioEffectsManager", "Enable effects failed", e)
         }
@@ -248,7 +280,7 @@ class SafeAudioEffectsManager : AudioEffectsManaging {
     
     override fun disableEffects() {
         try {
-            delegate.disableEffects()
+            delegate.releaseAudioEffects()
         } catch (e: Exception) {
             android.util.Log.e("SafeAudioEffectsManager", "Disable effects failed", e)
         }
@@ -256,7 +288,9 @@ class SafeAudioEffectsManager : AudioEffectsManaging {
     
     override fun isEffectsEnabled(): Boolean {
         return try {
-            delegate.isEffectsEnabled()
+            // AudioEffectsManager doesn't track enabled state
+            // Return false as default
+            false
         } catch (e: Exception) {
             false
         }
@@ -264,7 +298,7 @@ class SafeAudioEffectsManager : AudioEffectsManaging {
     
     override fun destroy() {
         try {
-            delegate.destroy()
+            delegate.releaseAudioEffects()
         } catch (e: Exception) {
             android.util.Log.e("SafeAudioEffectsManager", "Destroy failed", e)
         }

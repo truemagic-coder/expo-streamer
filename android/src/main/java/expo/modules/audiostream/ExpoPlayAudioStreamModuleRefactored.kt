@@ -19,7 +19,7 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.audiostream.core.*
-import expo.modules.audiostream.core.AudioInterfaces.EventSenderManaging
+import expo.modules.audiostream.core.EventSenderManaging
 import kotlinx.coroutines.*
 
 /**
