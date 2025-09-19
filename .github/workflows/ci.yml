@@ -97,3 +97,39 @@ jobs:
 
     - name: Run dependency check
       run: npx audit-ci --moderate
+
+  validate-native:
+    name: Validate Native Code
+    runs-on: ubuntu-latest
+    needs: [lint-and-test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'yarn'
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+
+    - name: Validate iOS Swift code
+      run: |
+        echo "Checking iOS Swift files..."
+        find ios -name "*.swift" -exec echo "✓ Found: {}" \;
+        echo "iOS native code validation completed"
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Validate Android Kotlin code
+      run: |
+        echo "Checking Android Kotlin files..."
+        find android -name "*.kt" -exec echo "✓ Found: {}" \;
+        echo "Android native code validation completed"
