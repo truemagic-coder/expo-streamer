@@ -6,7 +6,9 @@
   "types": "build/index.d.ts",
   "source": "src/index.ts",
   "scripts": {
-    "build": "expo-module build",
+    "build": "tsc --project .",
+    "build:plugin": "tsc --project ./plugin",
+    "build:watch": "tsc --project . --watch",
     "clean": "expo-module clean",
     "lint": "expo-module lint",
     "test": "jest",
