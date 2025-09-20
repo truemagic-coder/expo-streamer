@@ -20,16 +20,16 @@ public struct SoundConfig {
     
     /// Default configuration with standard settings
     public static let defaultConfig = SoundConfig(
-        sampleRate: 44100.0,
+        sampleRate: 16000.0,
         playbackMode: .regular
     )
     
     /// Creates a new sound configuration with the specified settings
     /// - Parameters:
-    ///   - sampleRate: The sample rate in Hz (default: 44100.0)
+    ///   - sampleRate: The sample rate in Hz (default: 16000.0)
     ///   - playbackMode: The playback mode (default: .regular)
     public init(
-        sampleRate: Double = 44100.0,
+        sampleRate: Double = 16000.0,
         playbackMode: PlaybackMode = .regular
     ) {
         self.sampleRate = sampleRate
