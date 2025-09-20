@@ -147,27 +147,31 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
         
         
         AsyncFunction("playAudio") { (base64chunk: String, turnId: String, encoding: String? , promise: Promise) in
-            // Determine the audio format based on the encoding parameter
-            let commonFormat: AVAudioCommonFormat
-            switch encoding {
-            case "pcm_f32le":
-                commonFormat = .pcmFormatFloat32
-            case "pcm_s16le", nil:
-                commonFormat = .pcmFormatInt16
-            default:
-                Logger.debug("[ExpoPlayAudioStreamModule] Unsupported encoding: \(encoding ?? "nil"), defaulting to PCM_S16LE")
-                commonFormat = .pcmFormatInt16
+            // Ensure audio session is initialized for playback
+            if !isAudioSessionInitialized {
+                do {
+                    try ensureAudioSessionInitialized()
+                } catch {
+                    Logger.debug("[ExpoPlayAudioStreamModule] Failed to initialize audio session: \(error.localizedDescription)")
+                    promise.reject("ERR_AUDIO_SESSION", "Failed to initialize audio session: \(error.localizedDescription)")
+                    return
+                }
             }
-            
-            switch self.componentManager.getAudioSessionManager() {
-            case .success(let manager):
-                manager.playAudio(base64chunk, turnId, commonFormat: commonFormat, resolver: { _ in
-                    promise.resolve(nil)
-                }, rejecter: { code, message, error in
-                    promise.reject(code ?? "ERR_UNKNOWN", message ?? "Unknown error")
-                })
+
+            // Route playback through SoundPlayer so it respects SoundConfig (sampleRate, playbackMode)
+            switch self.componentManager.getSoundPlayer() {
+            case .success(let soundPlayer):
+                do {
+                    try soundPlayer.playSound(base64Chunk: base64chunk, turnId: turnId, encoding: encoding, resolver: { _ in
+                        promise.resolve(nil)
+                    }, rejecter: { code, message, error in
+                        promise.reject(code ?? "ERR_UNKNOWN", message ?? "Unknown error")
+                    })
+                } catch {
+                    promise.reject("ERR_PLAY", error.localizedDescription)
+                }
             case .failure(let error):
-                promise.reject("ERROR", error.localizedDescription)
+                promise.reject("SOUND_PLAYER_UNAVAILABLE", error.localizedDescription)
             }
         }
         
