@@ -119,6 +119,28 @@ class SoundPlayer: SoundPlayerManaging {
         try self.ensureAudioEngineIsSetup()
     }
     
+    /// Protocol conformance method for playing sound
+    /// - Parameters:
+    ///   - base64Chunk: Base64 encoded audio data
+    ///   - turnId: Turn identifier for the audio chunk
+    ///   - encoding: Audio encoding format
+    ///   - resolver: Promise resolver callback
+    ///   - rejecter: Promise rejection callback
+    /// - Throws: Error if audio processing fails
+    public func playSound(base64Chunk: String, turnId: String, encoding: String?, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) throws {
+        let commonFormat: AVAudioCommonFormat
+        switch encoding?.lowercased() {
+        case "pcm_f32le":
+            commonFormat = .pcmFormatFloat32
+        case "pcm_s16le", nil:
+            commonFormat = .pcmFormatInt16
+        default:
+            commonFormat = .pcmFormatInt16
+        }
+        
+        try self.play(audioChunk: base64Chunk, turnId: turnId, resolver: resolver, rejecter: rejecter, commonFormat: commonFormat)
+    }
+    
     /// Resets the audio configuration to default values and reconfigures the audio engine
     /// - Throws: Error if audio engine setup fails
     public func resetConfigToDefault() throws {
@@ -563,6 +585,5 @@ class SoundPlayer: SoundPlayerManaging {
                 }
             }
         }
-    }
     }
 }

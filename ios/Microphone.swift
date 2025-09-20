@@ -151,7 +151,7 @@ class Microphone: MicrophoneManaging {
         }
     }
     
-    public func stopRecording(resolver promise: Promise?) {
+    public func stopRecording(resolver: RCTPromiseResolveBlock?) -> RecordingResult? {
         guard self.isRecording else {
             if let promiseResolver = promise {
                 promiseResolver.resolve(nil)

@@ -10,44 +10,21 @@ let deviceReconnectedEvent: String = "DeviceReconnected"
 
 public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, MicrophoneDataDelegate, SoundPlayerDelegate {
     // MARK: - Dependencies (SOLID - Dependency Inversion)
-    private let componentManager: AudioComponentManager
+    private var componentManager: AudioComponentManager!
     private var isAudioSessionInitialized: Bool = false
     
-    // MARK: - Initialization
+    // MARK: - Module Definition
     
-    public override init() {
-        self.componentManager = AudioComponentManager()
-        super.init()
-        setupDelegates()
-    }
-    
-    // For testing - dependency injection
-    init(componentManager: AudioComponentManager) {
-        self.componentManager = componentManager
-        super.init()
-        setupDelegates()
-    }
-    
-    private func setupDelegates() {
-        // Set up delegates safely
-        if case .success(let manager) = componentManager.getAudioSessionManager() {
-            manager.delegate = self
-        }
-        
-        if case .success(let microphone) = componentManager.getMicrophone() {
-            microphone.delegate = self
-        }
-        
-        if case .success(let player) = componentManager.getSoundPlayer() {
-            player.delegate = self
-        }
-    }
-
     public func definition() -> ModuleDefinition {
         Name("ExpoPlayAudioStream")
         
         // Defines event names that the module can send to JavaScript.
         Events([audioDataEvent, soundIsPlayedEvent, soundIsStartedEvent, deviceReconnectedEvent])
+        
+        OnCreate {
+            self.componentManager = AudioComponentManager()
+            self.setupDelegates()
+        }
         
         Function("destroy") {
             // Safe cleanup using component manager
@@ -249,11 +226,17 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
                     commonFormat = .pcmFormatInt16
                 }
         
-                try soundPlayer.play(audioChunk: base64Chunk, turnId: turnId, resolver: {
-                    _ in promise.resolve(nil)
-                }, rejecter: {code, message, error in
-                    promise.reject(code ?? "ERR_UNKNOWN", message ?? "Unknown error")
-                }, commonFormat: commonFormat)
+                try {
+                    if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                        try soundPlayer.play(audioChunk: base64Chunk, turnId: turnId, resolver: {
+                            _ in promise.resolve(nil)
+                        }, rejecter: {code, message, error in
+                            promise.reject(code ?? "ERR_UNKNOWN", message ?? "Unknown error")
+                        }, commonFormat: commonFormat)
+                    } else {
+                        promise.reject("SOUND_PLAYER_UNAVAILABLE", "Sound player is not available")
+                    }
+                }()
             } catch {
                 print("Error enqueuing audio: \(error.localizedDescription)")
             }
@@ -268,24 +251,40 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
                     return
                 }
             }
-            soundPlayer.playWav(base64Wav: base64Chunk)
+            if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                soundPlayer.playWav(base64Wav: base64Chunk)
+            }
             promise.resolve(nil)
         }
         
         AsyncFunction("stopSound") { (promise: Promise) in
-            soundPlayer.stop(promise)
+            if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                soundPlayer.stop(promise)
+            } else {
+                promise.reject("SOUND_PLAYER_UNAVAILABLE", "Sound player is not available")
+            }
         }
         
         AsyncFunction("interruptSound") { (promise: Promise) in
-            soundPlayer.interrupt(promise)
+            if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                soundPlayer.interrupt(promise)
+            } else {
+                promise.reject("SOUND_PLAYER_UNAVAILABLE", "Sound player is not available")
+            }
         }
         
         Function("resumeSound") {
-            soundPlayer.resume()
+            if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                soundPlayer.resume()
+            }
         }
         
         AsyncFunction("clearSoundQueueByTurnId") { (turnId: String, promise: Promise) in
-            soundPlayer.clearSoundQueue(turnIdToClear: turnId, resolver: promise)
+            if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                soundPlayer.clearSoundQueue(turnIdToClear: turnId, resolver: promise)
+            } else {
+                promise.reject("SOUND_PLAYER_UNAVAILABLE", "Sound player is not available")
+            }
         }
         
         AsyncFunction("startMicrophone") { (options: [String: Any], promise: Promise) in
@@ -364,7 +363,11 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
                 if useDefault {
                     // Reset to default configuration
                     Logger.debug("[ExpoPlayAudioStreamModule] Resetting sound configuration to default values")
-                    try soundPlayer.resetConfigToDefault()
+                    if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                        try soundPlayer.resetConfigToDefault()
+                    } else {
+                        throw NSError(domain: "SOUND_PLAYER_UNAVAILABLE", code: -1, userInfo: [NSLocalizedDescriptionKey: "Sound player is not available"])
+                    }
                 } else {
                     // Extract configuration values from the provided dictionary
                     let sampleRate = config["sampleRate"] as? Double ?? 16000.0
@@ -386,7 +389,11 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
                     
                     // Update the sound player configuration
                     Logger.debug("[ExpoPlayAudioStreamModule] Setting sound configuration - sampleRate: \(sampleRate), playbackMode: \(playbackModeString)")
-                    try soundPlayer.updateConfig(soundConfig)
+                    if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                        try soundPlayer.updateConfig(soundConfig)
+                    } else {
+                        throw NSError(domain: "SOUND_PLAYER_UNAVAILABLE", code: -1, userInfo: [NSLocalizedDescriptionKey: "Sound player is not available"])
+                    }
                 }
                 
                 promise.resolve(nil)
@@ -562,5 +569,22 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
     
     func onSoundStartedPlaying() {
         sendEvent(soundIsStartedEvent)
+    }
+    
+    // MARK: - Private Helper Methods
+    
+    private func setupDelegates() {
+        // Set up delegates safely
+        if case .success(let manager) = componentManager.getAudioSessionManager() {
+            manager.delegate = self
+        }
+        
+        if case .success(let microphone) = componentManager.getMicrophone() {
+            microphone.delegate = self
+        }
+        
+        if case .success(let player) = componentManager.getSoundPlayer() {
+            player.delegate = self
+        }
     }
 }

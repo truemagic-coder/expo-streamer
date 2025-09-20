@@ -1,5 +1,6 @@
 import AVFoundation
 import ExpoModulesCore
+import Accelerate
 
 public enum SoundPlayerError: Error {
     case invalidBase64String

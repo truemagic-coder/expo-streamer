@@ -3,7 +3,7 @@ import AVFoundation
 
 // MARK: - Audio Engine State Management (SOLID - Single Responsibility)
 
-enum AudioEngineState {
+enum AudioEngineState: Equatable {
     case uninitialized
     case initializing
     case ready
@@ -11,6 +11,22 @@ enum AudioEngineState {
     case running
     case stopping
     case error(String)
+    
+    static func == (lhs: AudioEngineState, rhs: AudioEngineState) -> Bool {
+        switch (lhs, rhs) {
+        case (.uninitialized, .uninitialized),
+             (.initializing, .initializing),
+             (.ready, .ready),
+             (.starting, .starting),
+             (.running, .running),
+             (.stopping, .stopping):
+            return true
+        case (.error(let lhsMessage), .error(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        default:
+            return false
+        }
+    }
     
     var isOperational: Bool {
         switch self {
