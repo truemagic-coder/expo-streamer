@@ -134,12 +134,20 @@ class SoundPlayer: SoundPlayerManaging {
             self.detachOldAvNodesFromEngine()
         }
         
-        // Update configuration
-        self.config = newConfig
+        // Update configuration (fallback if VP mode incompatible with current rate)
+        var appliedConfig = newConfig
+        if newConfig.playbackMode == .voiceProcessing {
+            // Voice processing requires 48kHz mono. If sample rate differs, fallback to regular.
+            if newConfig.sampleRate != 48000 {
+                Logger.debug("[SoundPlayer] VoiceProcessing requested but sampleRate=\(newConfig.sampleRate) != 48000. Falling back to regular mode to avoid invalid format.")
+                appliedConfig.playbackMode = .regular
+            }
+        }
+        self.config = appliedConfig
         
         // Update format with new sample rate
-        self.audioPlaybackFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: newConfig.sampleRate, channels: 1, interleaved: false)
-        Logger.debug("[SoundPlayer] Created audio format with sample rate: \(self.audioPlaybackFormat?.sampleRate ?? 0)")
+    self.audioPlaybackFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: appliedConfig.sampleRate, channels: 1, interleaved: false)
+    Logger.debug("[SoundPlayer] Created audio format with sample rate: \(self.audioPlaybackFormat?.sampleRate ?? 0), mode: \(appliedConfig.playbackMode)")
         
         // Reconfigure audio engine
         try self.ensureAudioEngineIsSetup()
@@ -180,6 +188,14 @@ class SoundPlayer: SoundPlayerManaging {
         guard let engine = self.audioEngine else { 
             Logger.debug("[SoundPlayer] No audio engine available")
             return 
+        }
+        // Voice Processing I/O on iOS is only valid for specific formats (typically mono @ 48000 Hz).
+        // If our playback format is not supported, skip enabling to avoid crashes.
+        let currentSR = self.audioPlaybackFormat?.sampleRate ?? 0
+        let currentCh = self.audioPlaybackFormat?.channelCount ?? 0
+        if currentSR != 48000 || currentCh != 1 {
+            Logger.debug("[SoundPlayer] Skipping voice processing: unsupported format (sr=\(currentSR), ch=\(currentCh)). Requires 48000 Hz mono.")
+            return
         }
         
         // Check current state to avoid redundant calls
@@ -275,17 +291,27 @@ class SoundPlayer: SoundPlayerManaging {
         audioPlayerNode = AVAudioPlayerNode()
         if let playerNode = self.audioPlayerNode {
             audioEngine.attach(playerNode)
+            // Feed player's buffers using our desired playback format
             audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: self.audioPlaybackFormat)
-            audioEngine.connect(audioEngine.mainMixerNode, to: audioEngine.outputNode, format: self.audioPlaybackFormat)
+            // Always connect mixer to hardware output using hardware's native format (nil lets AVAudioEngine choose)
+            audioEngine.connect(audioEngine.mainMixerNode, to: audioEngine.outputNode, format: nil)
             
-            Logger.debug("[SoundPlayer] Audio engine connected with format - sampleRate: \(self.audioPlaybackFormat?.sampleRate ?? 0), channels: \(self.audioPlaybackFormat?.channelCount ?? 0)")
+            let outFormat = audioEngine.outputNode.outputFormat(forBus: 0)
+            Logger.debug("[SoundPlayer] Audio engine connected: playerFormat(sr=\(self.audioPlaybackFormat?.sampleRate ?? 0), ch=\(self.audioPlaybackFormat?.channelCount ?? 0)), outputFormat(sr=\(outFormat.sampleRate), ch=\(outFormat.channelCount))")
             
             // Only enable voice processing immediately for conversation mode
             // For voice processing mode, we'll enable it only during actual playback
             if config.playbackMode == .conversation {
-                try audioEngine.inputNode.setVoiceProcessingEnabled(true)
-                try audioEngine.outputNode.setVoiceProcessingEnabled(true)
-                Logger.debug("[SoundPlayer] Voice processing immediately enabled for conversation mode (stays disabled for regular mode, and enables only during playback for voice processing mode)")
+                // Guard against unsupported formats to prevent crashes
+                let currentSR = self.audioPlaybackFormat?.sampleRate ?? 0
+                let currentCh = self.audioPlaybackFormat?.channelCount ?? 0
+                if currentSR == 48000 && currentCh == 1 {
+                    try audioEngine.inputNode.setVoiceProcessingEnabled(true)
+                    try audioEngine.outputNode.setVoiceProcessingEnabled(true)
+                    Logger.debug("[SoundPlayer] Voice processing enabled for conversation mode (48kHz mono)")
+                } else {
+                    Logger.debug("[SoundPlayer] Skipping voice processing for conversation mode: requires 48kHz mono, got sr=\(currentSR), ch=\(currentCh)")
+                }
             }
         }
         self.isAudioEngineIsSetup = true
@@ -402,6 +428,14 @@ class SoundPlayer: SoundPlayerManaging {
             
             guard let engine = self.audioEngine else {
                 Logger.debug("[SoundPlayer] No audio engine available")
+                return false
+            }
+
+            // Validate supported format before attempting to enable voice processing
+            let currentSR = self.audioPlaybackFormat?.sampleRate ?? 0
+            let currentCh = self.audioPlaybackFormat?.channelCount ?? 0
+            if currentSR != 48000 || currentCh != 1 {
+                Logger.debug("[SoundPlayer] Voice processing not enabled: requires 48000 Hz mono, got sr=\(currentSR), ch=\(currentCh)")
                 return false
             }
             
@@ -562,9 +596,23 @@ class SoundPlayer: SoundPlayerManaging {
             Logger.debug("[SoundPlayer] Playing audio [ \(self.audioQueue.count)]")
 
             // Get the first buffer tuple from the queue (buffer, promise, turnId)
-            if let (buffer, promise, turnId) = self.audioQueue.first {
+            if let (originalBuffer, promise, turnId) = self.audioQueue.first {
                 // Remove the buffer from the queue immediately to avoid playing it twice
                 self.audioQueue.removeFirst()
+
+                // If the buffer sample rate doesn't match the hardware output, resample for reliable playback
+                var buffer = originalBuffer
+                let outputFormat = self.audioEngine.outputNode.outputFormat(forBus: 0)
+                let inputSR = buffer.format.sampleRate
+                let outputSR = outputFormat.sampleRate
+                if abs(inputSR - outputSR) > 0.5 {
+                    Logger.debug("[SoundPlayer] Resampling buffer: inputSR=\(inputSR) -> outputSR=\(outputSR)")
+                    if let resampled = AudioUtils.resampleAudioBuffer(buffer, from: inputSR, to: outputSR) {
+                        buffer = resampled
+                    } else {
+                        Logger.debug("[SoundPlayer] Resampling failed; proceeding with original buffer (may sound off)")
+                    }
+                }
 
                 // Schedule the buffer for playback with a completion handler
                 self.audioPlayerNode.scheduleBuffer(buffer) { [weak self] in
