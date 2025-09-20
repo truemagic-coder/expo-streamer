@@ -228,11 +228,11 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
         
                 try {
                     if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
-                        try soundPlayer.play(audioChunk: base64Chunk, turnId: turnId, resolver: {
+                        try soundPlayer.playSound(base64Chunk: base64Chunk, turnId: turnId, encoding: encoding, resolver: {
                             _ in promise.resolve(nil)
                         }, rejecter: {code, message, error in
                             promise.reject(code ?? "ERR_UNKNOWN", message ?? "Unknown error")
-                        }, commonFormat: commonFormat)
+                        })
                     } else {
                         promise.reject("SOUND_PLAYER_UNAVAILABLE", "Sound player is not available")
                     }
