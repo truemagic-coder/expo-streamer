@@ -1,7 +1,7 @@
 # 🎙️ expo-streamer
 
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
-[![npm version](https://badge.fury.io/js/expo-streamer.svg)](https://badge.fury.io/js/expo-streamer)
+[![npm version](https://img.shields.io/npm/v/expo-streamer)](https://www.npmjs.com/package/expo-streamer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/truemagic-coder/expo-streamer/ci.yml?branch=main)](https://github.com/truemagic-coder/expo-streamer/actions/workflows/ci.yml)
 [![codecov](https://img.shields.io/codecov/c/github/truemagic-coder/expo-streamer/main.svg)](https://codecov.io/gh/truemagic-coder/solana-agent)
