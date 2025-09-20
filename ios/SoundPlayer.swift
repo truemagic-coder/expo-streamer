@@ -98,6 +98,31 @@ class SoundPlayer: SoundPlayerManaging {
             return
         }
         
+        // Update audio session sample rate if it has changed
+        if newConfig.sampleRate != self.config.sampleRate {
+            let audioSession = AVAudioSession.sharedInstance()
+            do {
+                let oldSampleRate = audioSession.sampleRate
+                Logger.debug("[SoundPlayer] Current audio session sample rate: \(oldSampleRate), requesting: \(newConfig.sampleRate)")
+                
+                // Deactivate session briefly to allow sample rate change
+                try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+                try audioSession.setPreferredSampleRate(newConfig.sampleRate)
+                try audioSession.setPreferredIOBufferDuration(1024 / newConfig.sampleRate)
+                try audioSession.setActive(true)
+                
+                let newActualSampleRate = audioSession.sampleRate
+                Logger.debug("[SoundPlayer] Audio session sample rate updated to: \(newActualSampleRate)")
+                
+                if abs(newActualSampleRate - newConfig.sampleRate) > 0.1 {
+                    Logger.debug("[SoundPlayer] ⚠️ WARNING: Requested sample rate \(newConfig.sampleRate) but got \(newActualSampleRate)")
+                }
+            } catch {
+                Logger.debug("[SoundPlayer] Failed to update audio session sample rate: \(error)")
+                // Continue anyway, the format update might still work
+            }
+        }
+        
         // Stop playback if active
         if let playerNode = self.audioPlayerNode, playerNode.isPlaying {
             playerNode.stop()
@@ -114,6 +139,7 @@ class SoundPlayer: SoundPlayerManaging {
         
         // Update format with new sample rate
         self.audioPlaybackFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: newConfig.sampleRate, channels: 1, interleaved: false)
+        Logger.debug("[SoundPlayer] Created audio format with sample rate: \(self.audioPlaybackFormat?.sampleRate ?? 0)")
         
         // Reconfigure audio engine
         try self.ensureAudioEngineIsSetup()
@@ -252,6 +278,8 @@ class SoundPlayer: SoundPlayerManaging {
             audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: self.audioPlaybackFormat)
             audioEngine.connect(audioEngine.mainMixerNode, to: audioEngine.outputNode, format: self.audioPlaybackFormat)
             
+            Logger.debug("[SoundPlayer] Audio engine connected with format - sampleRate: \(self.audioPlaybackFormat?.sampleRate ?? 0), channels: \(self.audioPlaybackFormat?.channelCount ?? 0)")
+            
             // Only enable voice processing immediately for conversation mode
             // For voice processing mode, we'll enable it only during actual playback
             if config.playbackMode == .conversation {
@@ -354,6 +382,7 @@ class SoundPlayer: SoundPlayerManaging {
     /// - Returns: Processed audio buffer or nil if processing fails
     /// - Throws: SoundPlayerError if format is unsupported
     private func processAudioChunk(_ base64String: String, commonFormat: AVAudioCommonFormat) throws -> AVAudioPCMBuffer? {
+        Logger.debug("[SoundPlayer] Processing audio chunk with format sample rate: \(self.audioPlaybackFormat?.sampleRate ?? 0)")
         switch commonFormat {
         case .pcmFormatFloat32:
             return AudioUtils.processFloat32LEAudioChunk(base64String, audioFormat: self.audioPlaybackFormat)
