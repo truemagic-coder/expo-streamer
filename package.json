@@ -1,6 +1,6 @@
 {
   "name": "expo-streamer",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Realtime Audio Streaming for Expo",
   "main": "build/index.js",
   "types": "build/index.d.ts",
