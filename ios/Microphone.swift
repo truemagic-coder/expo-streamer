@@ -153,18 +153,19 @@ class Microphone: MicrophoneManaging {
     
     public func stopRecording(resolver: RCTPromiseResolveBlock?) -> RecordingResult? {
         guard self.isRecording else {
-            if let promiseResolver = promise {
-                promiseResolver.resolve(nil)
+            if let promiseResolver = resolver {
+                promiseResolver(nil)
             }
-            return
+            return nil
         }
         self.isRecording = false
         self.isVoiceProcessingEnabled = false
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
-        if let promiseResolver = promise {
-            promiseResolver.resolve(nil)
+        if let promiseResolver = resolver {
+            promiseResolver(nil)
         }
+        return nil
     }
     
     /// Processes the audio buffer and writes data to the file. Also handles audio processing if enabled.

@@ -313,7 +313,8 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
                 }
             }            
             
-            if let result = self.microphone.startRecording(settings: settings, intervalMilliseconds: interval) {
+            if case .success(let microphone) = componentManager.getMicrophone(),
+               let result = microphone.startRecording(settings: settings, intervalMilliseconds: interval) {
                 if let resError = result.error {
                     promise.reject("ERROR", resError)
                 } else {
@@ -337,11 +338,19 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
         ///         and releases hardware resources. It should be called when the app no longer needs
         ///         microphone access to conserve battery and system resources.
         AsyncFunction("stopMicrophone") { (promise: Promise) in
-            microphone.stopRecording(resolver: promise)
+            if case .success(let microphone) = componentManager.getMicrophone() {
+                _ = microphone.stopRecording(resolver: { result in
+                    promise.resolve(result)
+                })
+            } else {
+                promise.reject("MICROPHONE_UNAVAILABLE", "Microphone is not available")
+            }
         }
         
         Function("toggleSilence") {
-            microphone.toggleSilence()
+            if case .success(let microphone) = componentManager.getMicrophone() {
+                microphone.toggleSilence()
+            }
         }
         
         /// Sets the sound player configuration
