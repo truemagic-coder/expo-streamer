@@ -193,7 +193,7 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
             }
         }
 
-        AsyncFunction("stopAudio") { promise in
+        AsyncFunction("stopAudio") { (promise: Promise) in
             switch self.componentManager.getAudioSessionManager() {
             case .success(let manager):
                 manager.stopAudio(promise: promise)
