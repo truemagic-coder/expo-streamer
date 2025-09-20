@@ -523,6 +523,19 @@ class SoundPlayer: SoundPlayerManaging {
             if !self.isAudioEngineIsSetup {
                 try ensureAudioEngineIsSetup()
             }
+
+            // Ensure playback session configuration to avoid VPIO constraints at non-48k sample rates
+            let session = AVAudioSession.sharedInstance()
+            do {
+                if session.category != .playback {
+                    try session.setActive(false, options: .notifyOthersOnDeactivation)
+                    try session.setCategory(.playback, mode: .default, options: [.defaultToSpeaker])
+                    try session.setActive(true)
+                    Logger.debug("[SoundPlayer] Switched AVAudioSession to .playback for output")
+                }
+            } catch {
+                Logger.debug("[SoundPlayer] Failed to switch AVAudioSession to playback: \(error)")
+            }
             
             guard let buffer = try processAudioChunk(base64String, commonFormat: commonFormat) else {
                 Logger.debug("[SoundPlayer] Failed to process audio chunk")
@@ -579,11 +592,8 @@ class SoundPlayer: SoundPlayerManaging {
     /// 3. Scheduling the next audio buffer for playback
     /// 4. Handling completion callbacks and recursively playing the next chunk
     private func playNextInQueue() {
-        // Start the audio player node if it's not already playing
-        if !self.audioPlayerNode.isPlaying {
-            Logger.debug("[SoundPlayer] Starting Player")
-            self.audioPlayerNode.play()
-        }
+        // Start the player only when scheduling the first buffer to avoid underruns
+        // We'll call play() right after scheduling below if needed.
         
         // Use a dedicated queue for buffer access to avoid blocking the main thread
         self.bufferAccessQueue.async {
@@ -600,22 +610,29 @@ class SoundPlayer: SoundPlayerManaging {
                 // Remove the buffer from the queue immediately to avoid playing it twice
                 self.audioQueue.removeFirst()
 
-                // If the buffer sample rate doesn't match the hardware output, resample for reliable playback
-                var buffer = originalBuffer
+                // Use AVAudioEngine's built-in format converter between player->mixer->output.
+                // Just log if there is a mismatch so we can diagnose without altering the buffer.
+                let buffer = originalBuffer
                 let outputFormat = self.audioEngine.outputNode.outputFormat(forBus: 0)
                 let inputSR = buffer.format.sampleRate
                 let outputSR = outputFormat.sampleRate
                 if abs(inputSR - outputSR) > 0.5 {
-                    Logger.debug("[SoundPlayer] Resampling buffer: inputSR=\(inputSR) -> outputSR=\(outputSR)")
-                    if let resampled = AudioUtils.resampleAudioBuffer(buffer, from: inputSR, to: outputSR) {
-                        buffer = resampled
-                    } else {
-                        Logger.debug("[SoundPlayer] Resampling failed; proceeding with original buffer (may sound off)")
+                    Logger.debug("[SoundPlayer] Format SR mismatch (engine will convert): bufferSR=\(inputSR) -> outputSR=\(outputSR)")
+                }
+
+                // Optional: apply tiny fade-in ramp on first 64 frames to avoid clicks
+                var scheduledBuffer = buffer
+                if self.segmentsLeftToPlay == 0, let channelData = buffer.floatChannelData {
+                    let rampFrames = min(Int(buffer.frameLength), 64)
+                    for i in 0..<rampFrames {
+                        let gain = Float(i) / Float(rampFrames)
+                        channelData.pointee[i] *= gain
                     }
+                    scheduledBuffer = buffer
                 }
 
                 // Schedule the buffer for playback with a completion handler
-                self.audioPlayerNode.scheduleBuffer(buffer) { [weak self] in
+                self.audioPlayerNode.scheduleBuffer(scheduledBuffer) { [weak self] in
                     // ✅ Move to main queue to avoid blocking Core Audio's realtime thread
                     DispatchQueue.main.async {
                         guard let self = self else {
@@ -659,6 +676,11 @@ class SoundPlayer: SoundPlayerManaging {
                             }
                         }
                     }
+                }
+
+                // Start the player after scheduling if it isn't already playing
+                if !self.audioPlayerNode.isPlaying {
+                    self.audioPlayerNode.play()
                 }
             }
         }
