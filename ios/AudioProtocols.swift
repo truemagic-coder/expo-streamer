@@ -34,6 +34,7 @@ protocol SoundPlayerManaging: AnyObject {
     func playSound(base64Chunk: String, turnId: String, encoding: String?, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) throws
     func playWav(base64Wav base64String: String)
     func updateConfig(_ newConfig: SoundConfig) throws
+    func resetConfigToDefault() throws
     func stop(_ promise: Promise)
     func interrupt(_ promise: Promise)
     func resume()
