@@ -1,10 +1,20 @@
 {
   "name": "expo-streamer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Realtime Audio Streaming for Expo",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "source": "src/index.ts",
+  "files": [
+    "build",
+    "android/src/main",
+    "android/build.gradle",
+    "ios/*.swift",
+    "ios/*.podspec",
+    "app.plugin.js",
+    "expo-module.config.json",
+    "plugin/build"
+  ],
   "scripts": {
     "build": "tsc --project .",
     "build:plugin": "tsc --project ./plugin",

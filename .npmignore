@@ -20,9 +20,11 @@ jest.config.*
 # Build and development files
 .expo/
 .gradle/
-build/
 node_modules/
 .env*
+
+# Keep build/ directory - it contains compiled TypeScript output needed for the package
+# build/ directory is INCLUDED
 
 # IDE and editor files
 .vscode/
