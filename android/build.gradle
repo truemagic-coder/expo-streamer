@@ -3,7 +3,13 @@ apply plugin: 'kotlin-android'
 apply plugin: 'maven-publish'
 
 group = 'expo.modules.streamer'
-version = '1.0.0'
+
+// Read version from package.json to keep it in sync
+def getPackageJsonVersion() {
+  def packageJson = new groovy.json.JsonSlurper().parseText(file('../package.json').text)
+  return packageJson.version
+}
+version = getPackageJsonVersion()
 
 buildscript {
   def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
@@ -68,7 +74,7 @@ android {
     minSdkVersion = safeExtGet("minSdkVersion", 23)
     targetSdkVersion = safeExtGet("targetSdkVersion", 34)
     versionCode = 1
-    versionName = "1.0.0"
+    versionName = getPackageJsonVersion()
   }
   lintOptions {
     abortOnError = false

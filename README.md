@@ -291,6 +291,16 @@ cd example
 npm run ios     # or npm run android
 ```
 
+### Version Management
+
+The package uses synchronized versioning across all platforms:
+
+- **npm package**: Version defined in `package.json`
+- **iOS podspec**: Automatically reads from `package.json` via `package['version']`
+- **Android gradle**: Automatically reads from `package.json` via `getPackageJsonVersion()`
+
+To update the version, only change `package.json` - all other platforms will sync automatically.
+
 ### Code Standards
 
 - Full TypeScript support with strict mode
