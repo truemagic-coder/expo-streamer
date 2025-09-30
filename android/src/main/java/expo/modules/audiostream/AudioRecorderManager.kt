@@ -15,7 +15,11 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.max
+import kotlin.math.min
 
 
 class AudioRecorderManager(
@@ -43,6 +47,7 @@ class AudioRecorderManager(
     private val mainHandler = Handler(Looper.getMainLooper())
     private val audioRecordLock = Any()
     private var audioFileHandler: AudioFileHandler = AudioFileHandler(filesDir)
+    private var hardwareSampleRate: Int = 0
     
     // Flag to control whether actual audio data or silence is sent
     private var isSilent = false
@@ -132,9 +137,18 @@ class AudioRecorderManager(
         if (audioRecord == null || !isPaused.get()) {
             Log.d(Constants.TAG, "AudioFormat: $audioFormat, BufferSize: $bufferSizeInBytes")
 
-            audioRecord = createAudioRecord(tempRecordingConfig, audioFormat, promise)
+            audioRecord = createAudioRecord(recordingConfig, audioFormat, promise)
             if (audioRecord == null) {
                 return
+            }
+            hardwareSampleRate = audioRecord?.sampleRate ?: tempRecordingConfig.sampleRate
+            if (hardwareSampleRate != recordingConfig.sampleRate) {
+                Log.w(
+                    Constants.TAG,
+                    "Hardware sample rate $hardwareSampleRate Hz differs from requested ${recordingConfig.sampleRate} Hz. Resampling will be applied."
+                )
+            } else {
+                Log.d(Constants.TAG, "Hardware sample rate matches requested: ${recordingConfig.sampleRate} Hz")
             }
         }
         // Create the audio file and write WAV header
@@ -212,6 +226,7 @@ class AudioRecorderManager(
             streamUuid = null
             lastEmitTime = SystemClock.elapsedRealtime()
             lastEmittedSize = 0
+            hardwareSampleRate = 0
             
             Log.d(Constants.TAG, "Audio resources cleaned up")
         } catch (e: Exception) {
@@ -233,7 +248,10 @@ class AudioRecorderManager(
                 val bytesRead = audioRecord?.read(audioData, 0, bufferSizeInBytes) ?: -1
                 Log.d(Constants.TAG, "Last Read $bytesRead bytes")
                 if (bytesRead > 0) {
-                    emitAudioData(audioData, bytesRead)
+                    val processedData = processAudioChunk(audioData, bytesRead)
+                    if (processedData.isNotEmpty()) {
+                        emitAudioData(processedData, processedData.size)
+                    }
                 }
                 
                 // Generate result before cleanup
@@ -370,9 +388,14 @@ class AudioRecorderManager(
                     } ?: -1 // Handle null case
                 }
                 if (bytesRead > 0) {
-                    fos.write(audioData, 0, bytesRead)
-                    totalDataSize += bytesRead
-                    accumulatedAudioData.write(audioData, 0, bytesRead)
+                    val processedData = processAudioChunk(audioData, bytesRead)
+                    if (processedData.isEmpty()) {
+                        continue
+                    }
+
+                    fos.write(processedData)
+                    totalDataSize += processedData.size
+                    accumulatedAudioData.write(processedData)
 
                     // Emit audio data at defined intervals
                     if (SystemClock.elapsedRealtime() - lastEmitTime >= interval) {
@@ -384,7 +407,7 @@ class AudioRecorderManager(
                         accumulatedAudioData.reset() // Clear the accumulator
                     }
 
-                    Log.d(Constants.TAG, "Bytes written to file: $bytesRead")
+                    Log.d(Constants.TAG, "Bytes written to file (processed): ${processedData.size}")
                 }
             }
         }
@@ -392,6 +415,57 @@ class AudioRecorderManager(
         audioFile?.let { file ->
             audioFileHandler.updateWavHeader(file)
         }
+    }
+
+    private fun processAudioChunk(rawData: ByteArray, bytesRead: Int): ByteArray {
+        if (bytesRead <= 0) {
+            return ByteArray(0)
+        }
+
+        if (hardwareSampleRate == 0 || hardwareSampleRate == recordingConfig.sampleRate) {
+            return rawData.copyOfRange(0, bytesRead)
+        }
+
+        if (audioFormat != AudioFormat.ENCODING_PCM_16BIT) {
+            Log.w(
+                Constants.TAG,
+                "Resampling currently supports only 16-bit PCM. Skipping conversion for format $audioFormat"
+            )
+            return rawData.copyOfRange(0, bytesRead)
+        }
+
+        val sourceSampleCount = bytesRead / 2
+        if (sourceSampleCount <= 0) {
+            return ByteArray(0)
+        }
+
+        val sourceSamples = ShortArray(sourceSampleCount)
+        ByteBuffer.wrap(rawData, 0, bytesRead)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .asShortBuffer()
+            .get(sourceSamples)
+
+        val targetSampleCount = ((sourceSampleCount.toLong() * recordingConfig.sampleRate + hardwareSampleRate / 2) / hardwareSampleRate).toInt()
+        if (targetSampleCount <= 0) {
+            return ByteArray(0)
+        }
+
+        val targetSamples = ShortArray(targetSampleCount)
+        val step = sourceSampleCount.toDouble() / targetSampleCount
+        var position = 0.0
+
+        for (i in 0 until targetSampleCount) {
+            val index = position.toInt().coerceAtMost(sourceSampleCount - 1)
+            val fraction = position - index
+            val nextIndex = min(index + 1, sourceSampleCount - 1)
+            val interpolated = ((1 - fraction) * sourceSamples[index] + fraction * sourceSamples[nextIndex]).toInt()
+            targetSamples[i] = interpolated.toShort()
+            position += step
+        }
+
+        val outBuffer = ByteBuffer.allocate(targetSampleCount * 2).order(ByteOrder.LITTLE_ENDIAN)
+        outBuffer.asShortBuffer().put(targetSamples)
+        return outBuffer.array()
     }
 
     private fun emitAudioData(audioData: ByteArray, length: Int) {
@@ -493,10 +567,28 @@ class AudioRecorderManager(
         // Always use VOICE_COMMUNICATION for better echo cancellation
         val audioSource = MediaRecorder.AudioSource.VOICE_COMMUNICATION
         
+        val channelConfig = if (config.channels == 1) {
+            AudioFormat.CHANNEL_IN_MONO
+        } else {
+            AudioFormat.CHANNEL_IN_STEREO
+        }
+
+        val minBufferSize = AudioRecord.getMinBufferSize(config.sampleRate, channelConfig, audioFormat)
+        if (minBufferSize <= 0) {
+            promise.reject(
+                "INITIALIZATION_FAILED",
+                "Unable to acquire minimum buffer size for sample rate ${config.sampleRate}",
+                null
+            )
+            return null
+        }
+
+        bufferSizeInBytes = max(bufferSizeInBytes, minBufferSize)
+
         val record = AudioRecord(
             audioSource, // Using VOICE_COMMUNICATION for built-in echo cancellation
             config.sampleRate,
-            if (config.channels == 1) AudioFormat.CHANNEL_IN_MONO else AudioFormat.CHANNEL_IN_STEREO,
+            channelConfig,
             audioFormat,
             bufferSizeInBytes
         )
