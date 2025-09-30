@@ -57,6 +57,8 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
             let numberOfChannels = options["channelConfig"] as? Int ?? 1 // Mono channel configuration
             let bitDepth = options["audioFormat"] as? Int ?? 16 // 16bits
             let interval = options["interval"] as? Int ?? 1000
+            let voiceProcessing = options["voiceProcessing"] as? Bool ?? false
+            let preGainDb = options["preGainDb"] as? Double ?? 0.0
             
             // Get the actual sample rate that will be used (hardware may override)
             let audioSession = AVAudioSession.sharedInstance()
@@ -70,6 +72,8 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
                 desiredSampleRate: requestedSampleRate,
                 numberOfChannels: numberOfChannels,
                 bitDepth: bitDepth,
+                voiceProcessingEnabled: voiceProcessing,
+                preGainDb: preGainDb,
                 maxRecentDataDuration: nil,
                 pointsPerSecond: nil
             )

@@ -5,7 +5,9 @@ data class RecordingConfig(
     val channels: Int = 1,
     val encoding: String = "pcm_16bit",
     val interval: Long = Constants.DEFAULT_INTERVAL,
-    val pointsPerSecond: Double = 20.0
+    val pointsPerSecond: Double = 20.0,
+    val voiceProcessing: Boolean = false,
+    val preGainDb: Double = 0.0
 ) {
     /**
      * Validates the recording configuration
@@ -44,7 +46,9 @@ data class RecordingConfig(
                 channels = (options["channels"] as? Number)?.toInt() ?: 1,
                 encoding = options["encoding"] as? String ?: "pcm_16bit",
                 interval = (options["interval"] as? Number)?.toLong() ?: Constants.DEFAULT_INTERVAL,
-                pointsPerSecond = (options["pointsPerSecond"] as? Number)?.toDouble() ?: 20.0
+                pointsPerSecond = (options["pointsPerSecond"] as? Number)?.toDouble() ?: 20.0,
+                voiceProcessing = options["voiceProcessing"] as? Boolean ?: false,
+                preGainDb = (options["preGainDb"] as? Number)?.toDouble() ?: 0.0
             )
         }
     }

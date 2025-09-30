@@ -158,6 +158,8 @@ export interface RecordingConfig {
   // Optional parameters for audio processing
   enableProcessing?: boolean; // Boolean to enable/disable audio processing (default is false)
   pointsPerSecond?: number; // Number of data points to extract per second of audio (default is 1000)
+  voiceProcessing?: boolean; // Enable platform voice processing (echo cancellation, etc.)
+  preGainDb?: number; // Gain adjustment applied before encoding, in decibels
   onAudioStream?: (event: AudioDataEvent) => Promise<void>; // Callback function to handle audio stream
 }
 

@@ -109,6 +109,8 @@ const voiceConfig: RecordingConfig = {
   channels: 1,                       // Mono for voice
   encoding: RecordingEncodingTypes.PCM_16BIT,
   interval: 50,                      // Fast response for real-time voice
+  voiceProcessing: true,             // Enable platform AEC/NS/AGC when needed
+  preGainDb: 6,                      // Optional gain boost for softer microphones
   onAudioStream: async (event: AudioDataEvent) => {
     // Process voice data with optimal settings
     console.log('Voice data:', {
@@ -131,6 +133,8 @@ const soundConfig: SoundConfig = {
 
 await ExpoStreamer.startRecording(voiceConfig);
 await ExpoStreamer.setSoundConfig(soundConfig);
+
+> **Tip:** `voiceProcessing` now defaults to `false` so recordings capture the hotter, unprocessed microphone signal. Toggle it on when you need the built-in echo cancellation/noise suppression pipeline. Use `preGainDb` (range −24 dB to +24 dB) to fine-tune input loudness without clipping.
 ```
 
 ### Event Handling with TypeScript

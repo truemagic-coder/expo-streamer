@@ -20,6 +20,7 @@ import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 
 
 class AudioRecorderManager(
@@ -48,6 +49,8 @@ class AudioRecorderManager(
     private val audioRecordLock = Any()
     private var audioFileHandler: AudioFileHandler = AudioFileHandler(filesDir)
     private var hardwareSampleRate: Int = 0
+    private var voiceProcessingEnabled = false
+    private var gainMultiplier = 1.0f
     
     // Flag to control whether actual audio data or silence is sent
     private var isSilent = false
@@ -132,6 +135,10 @@ class AudioRecorderManager(
         // Update with validated values
         audioFormat = formatValidationResult.first
         recordingConfig = formatValidationResult.second
+    voiceProcessingEnabled = recordingConfig.voiceProcessing
+    val clampedGainDb = recordingConfig.preGainDb.coerceIn(-24.0, 24.0)
+    gainMultiplier = 10.0.pow(clampedGainDb / 20.0).toFloat()
+    Log.d(Constants.TAG, "Voice processing enabled: $voiceProcessingEnabled, preGain: $clampedGainDb dB")
         
         // Initialize the AudioRecord if it's a new recording or if it's not currently paused
         if (audioRecord == null || !isPaused.get()) {
@@ -159,8 +166,12 @@ class AudioRecorderManager(
         }
 
         audioRecord?.startRecording()
-        // Apply audio effects after starting recording using the manager
-        audioRecord?.let { audioEffectsManager.setupAudioEffects(it) }
+        // Apply audio effects after starting recording when voice processing is requested
+        if (voiceProcessingEnabled) {
+            audioRecord?.let { audioEffectsManager.setupAudioEffects(it) }
+        } else {
+            audioEffectsManager.releaseAudioEffects()
+        }
         
         isPaused.set(false)
         isRecording.set(true)
@@ -227,6 +238,8 @@ class AudioRecorderManager(
             lastEmitTime = SystemClock.elapsedRealtime()
             lastEmittedSize = 0
             hardwareSampleRate = 0
+            voiceProcessingEnabled = false
+            gainMultiplier = 1.0f
             
             Log.d(Constants.TAG, "Audio resources cleaned up")
         } catch (e: Exception) {
@@ -330,8 +343,10 @@ class AudioRecorderManager(
         isPaused.set(false)
         audioRecord?.startRecording()
         
-        // Re-apply audio effects when resuming using the manager
-        audioRecord?.let { audioEffectsManager.setupAudioEffects(it) }
+        // Re-apply audio effects when resuming, only if voice processing is enabled
+        if (voiceProcessingEnabled) {
+            audioRecord?.let { audioEffectsManager.setupAudioEffects(it) }
+        }
         
         promise.resolve("Recording resumed")
     }
@@ -422,10 +437,6 @@ class AudioRecorderManager(
             return ByteArray(0)
         }
 
-        if (hardwareSampleRate == 0 || hardwareSampleRate == recordingConfig.sampleRate) {
-            return rawData.copyOfRange(0, bytesRead)
-        }
-
         if (audioFormat != AudioFormat.ENCODING_PCM_16BIT) {
             Log.w(
                 Constants.TAG,
@@ -445,26 +456,41 @@ class AudioRecorderManager(
             .asShortBuffer()
             .get(sourceSamples)
 
-        val targetSampleCount = ((sourceSampleCount.toLong() * recordingConfig.sampleRate + hardwareSampleRate / 2) / hardwareSampleRate).toInt()
-        if (targetSampleCount <= 0) {
-            return ByteArray(0)
+        val needsResample = hardwareSampleRate != 0 && hardwareSampleRate != recordingConfig.sampleRate
+        val processedSamples: ShortArray = if (needsResample) {
+            val targetSampleCount = ((sourceSampleCount.toLong() * recordingConfig.sampleRate + hardwareSampleRate / 2) / hardwareSampleRate).toInt()
+            if (targetSampleCount <= 0) {
+                return ByteArray(0)
+            }
+
+            val targetSamples = ShortArray(targetSampleCount)
+            val step = sourceSampleCount.toDouble() / targetSampleCount
+            var position = 0.0
+
+            for (i in 0 until targetSampleCount) {
+                val index = position.toInt().coerceAtMost(sourceSampleCount - 1)
+                val fraction = position - index
+                val nextIndex = min(index + 1, sourceSampleCount - 1)
+                val interpolated = ((1 - fraction) * sourceSamples[index] + fraction * sourceSamples[nextIndex]).toInt()
+                targetSamples[i] = interpolated.toShort()
+                position += step
+            }
+
+            targetSamples
+        } else {
+            sourceSamples
         }
 
-        val targetSamples = ShortArray(targetSampleCount)
-        val step = sourceSampleCount.toDouble() / targetSampleCount
-        var position = 0.0
-
-        for (i in 0 until targetSampleCount) {
-            val index = position.toInt().coerceAtMost(sourceSampleCount - 1)
-            val fraction = position - index
-            val nextIndex = min(index + 1, sourceSampleCount - 1)
-            val interpolated = ((1 - fraction) * sourceSamples[index] + fraction * sourceSamples[nextIndex]).toInt()
-            targetSamples[i] = interpolated.toShort()
-            position += step
+        if (gainMultiplier != 1.0f) {
+            val multiplier = gainMultiplier
+            for (i in processedSamples.indices) {
+                val scaled = (processedSamples[i] * multiplier).toInt()
+                processedSamples[i] = scaled.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+            }
         }
 
-        val outBuffer = ByteBuffer.allocate(targetSampleCount * 2).order(ByteOrder.LITTLE_ENDIAN)
-        outBuffer.asShortBuffer().put(targetSamples)
+        val outBuffer = ByteBuffer.allocate(processedSamples.size * 2).order(ByteOrder.LITTLE_ENDIAN)
+        outBuffer.asShortBuffer().put(processedSamples)
         return outBuffer.array()
     }
 
@@ -564,8 +590,11 @@ class AudioRecorderManager(
             return null
         }
         
-        // Always use VOICE_COMMUNICATION for better echo cancellation
-        val audioSource = MediaRecorder.AudioSource.VOICE_COMMUNICATION
+        val audioSource = if (config.voiceProcessing) {
+            MediaRecorder.AudioSource.VOICE_COMMUNICATION
+        } else {
+            MediaRecorder.AudioSource.MIC
+        }
         
         val channelConfig = if (config.channels == 1) {
             AudioFormat.CHANNEL_IN_MONO
