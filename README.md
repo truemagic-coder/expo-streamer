@@ -172,6 +172,37 @@ subscription?.remove();
 playbackSubscription?.remove();
 ```
 
+### Stopping Audio Playback
+
+```typescript
+import { ExpoStreamer } from 'expo-streamer';
+
+// Graceful stop - allows buffered audio to finish
+await ExpoStreamer.stopAudio();
+
+// Immediate flush - clears buffer and stops mid-stream
+await ExpoStreamer.flushAudio();
+```
+
+**When to use `stopAudio()` vs `flushAudio()`:**
+
+- **`stopAudio()`**: Use when you want to gracefully stop playback, allowing any buffered audio to finish playing. Good for natural conversation endings.
+  
+- **`flushAudio()`**: Use when you need to immediately stop all audio output, such as when the user interrupts or cancels playback. This clears all scheduled audio buffers without waiting for them to drain.
+
+```typescript
+// Example: User interruption handling
+async function handleUserInterrupt() {
+  // Immediately stop all audio
+  await ExpoStreamer.flushAudio();
+  
+  // Clear the turn queue
+  await ExpoStreamer.clearSoundQueueByTurnId(currentTurnId);
+  
+  console.log('Audio interrupted and flushed');
+}
+```
+
 ## 📋 API Reference
 
 ### Core Types
@@ -243,6 +274,7 @@ const EncodingTypes = {
 | `playAudio(data: string, turnId: string, encoding?: Encoding)` | `Promise<void>` | Play base64 audio data |
 | `pauseAudio()` | `Promise<void>` | Pause current playback |
 | `stopAudio()` | `Promise<void>` | Stop all audio playback |
+| `flushAudio()` | `Promise<void>` | Immediately flush audio buffer and stop mid-stream |
 | `clearPlaybackQueueByTurnId(turnId: string)` | `Promise<void>` | Clear queue for specific turn |
 
 ### Configuration Methods

@@ -371,6 +371,45 @@ class SoundPlayer: SoundPlayerManaging {
         promise.resolve(nil)
     }
     
+    /// Immediately flushes the audio buffer and stops playback mid-stream
+    /// - Parameter promise: Promise to resolve when flushed
+    func flushAudio(_ promise: Promise) {
+        Logger.debug("[SoundPlayer] Flushing Audio Buffer")
+        
+        // Thread-safe queue clearing
+        bufferAccessQueue.sync {
+            if !self.audioQueue.isEmpty {
+                Logger.debug("[SoundPlayer] Queue is not empty, clearing \(self.audioQueue.count) items")
+                self.audioQueue.removeAll()
+            }
+        }
+        
+        // Immediately stop the audio player node and reset it
+        if let playerNode = self.audioPlayerNode {
+            if playerNode.isPlaying {
+                Logger.debug("[SoundPlayer] Player is playing, stopping and resetting")
+                playerNode.stop()
+                // Reset the player node to clear any scheduled buffers
+                playerNode.reset()
+            }
+        }
+        
+        // Stop the engine and disable voice processing if in voice processing mode
+        if config.playbackMode == .voiceProcessing {
+            if let engine = self.audioEngine, engine.isRunning {
+                engine.stop()
+                try? self.disableVoiceProcessing()
+                self.isAudioEngineIsSetup = false
+            }
+        }
+        
+        self.segmentsLeftToPlay = 0
+        self.isPlaying = false
+        
+        Logger.debug("[SoundPlayer] Audio buffer flushed")
+        promise.resolve(nil)
+    }
+    
     /// Interrupts audio playback
     /// - Parameter promise: Promise to resolve when interrupted
     func interrupt(_ promise: Promise) {

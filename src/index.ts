@@ -200,6 +200,21 @@ export class ExpoPlayAudioStream {
   }
 
   /**
+   * Immediately flushes the audio buffer and stops playback mid-stream.
+   * Unlike stopAudio(), this method doesn't wait for the buffer to drain.
+   * @returns {Promise<void>}
+   * @throws {Error} If the audio buffer fails to flush.
+   */
+  static async flushAudio(): Promise<void> {
+    try {
+      return await ExpoPlayAudioStreamModule.flushAudio();
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Failed to flush audio: ${error}`);
+    }
+  }
+
+  /**
    * Clears the playback queue by turn ID.
    * @param {string} turnId - The turn ID.
    * @returns {Promise<void>}

@@ -287,6 +287,66 @@ class AudioPlaybackManager(private val eventSender: EventSender? = null) {
         }
     }
 
+    fun flushAudio(promise: Promise? = null) {
+        Log.d("ExpoPlayStreamModule", "Flushing audio buffer")
+        isPlaying = false
+        coroutineScope.launch {
+            try {
+                // Immediately stop and flush audio track
+                Log.d("ExpoPlayStreamModule", "Flushing audioTrack")
+                if (::audioTrack.isInitialized && audioTrack.state != AudioTrack.STATE_UNINITIALIZED) {
+                    try {
+                        audioTrack.pause()
+                        audioTrack.flush()
+                        audioTrack.stop()
+                    } catch (e: Exception) {
+                        Log.e("ExpoPlayStreamModule", "Error flushing AudioTrack: ${e.message}", e)
+                    }
+                }
+                
+                // Cancel jobs immediately
+                if (currentPlaybackJob != null) {
+                    Log.d("ExpoPlayStreamModule", "Cancelling currentPlaybackJob")
+                    currentPlaybackJob?.cancelAndJoin()
+                    currentPlaybackJob = null
+                }
+
+                if (processingJob != null) {
+                    Log.d("ExpoPlayStreamModule", "Cancelling processingJob")
+                    processingJob?.cancelAndJoin()
+                    processingJob = null
+                }
+
+                // Clear all pending chunks
+                Log.d("ExpoPlayStreamModule", "Clearing all pending chunks")
+                for (chunk in playbackChannel) {
+                    if (!chunk.isPromiseSettled) {
+                        chunk.isPromiseSettled = true
+                        chunk.promise.resolve(null)
+                    }
+                }
+
+                // Close channels
+                if (!processingChannel.isClosedForSend) {
+                    processingChannel.close()
+                }
+                if (!playbackChannel.isClosedForSend) {
+                    playbackChannel.close()
+                }
+
+                // Reset state
+                hasSentSoundStartedEvent = false
+                segmentsLeftToPlay = 0
+
+                Log.d("ExpoPlayStreamModule", "Audio buffer flushed")
+                promise?.resolve(null)
+            } catch (e: Exception) {
+                Log.e("ExpoPlayStreamModule", "Error in flushAudio: ${e.message}", e)
+                promise?.reject("ERR_FLUSH_AUDIO", e.message, e)
+            }
+        }
+    }
+
     fun stopPlayback(promise: Promise? = null) {
         Log.d("ExpoPlayStreamModule", "Stopping playback")
         if (!isPlaying || playbackChannel.isEmpty ) {

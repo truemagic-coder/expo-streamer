@@ -210,6 +210,14 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
             }
         }
         
+        AsyncFunction("flushAudio") { (promise: Promise) in
+            if case .success(let soundPlayer) = componentManager.getSoundPlayer() {
+                soundPlayer.flushAudio(promise)
+            } else {
+                promise.reject("SOUND_PLAYER_UNAVAILABLE", "Sound player is not available")
+            }
+        }
+        
         AsyncFunction("listAudioFiles") { (promise: Promise) in
             let result = listAudioFiles()
             promise.resolve(result)

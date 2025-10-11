@@ -179,6 +179,8 @@ class ExpoPlayAudioStreamModule : Module(), EventSender {
 
         AsyncFunction("stopAudio") { promise: Promise -> audioPlaybackManager.stopPlayback(promise) }
 
+        AsyncFunction("flushAudio") { promise: Promise -> audioPlaybackManager.flushAudio(promise) }
+
         AsyncFunction("clearAudioFiles") { promise: Promise ->
             audioRecorderManager.clearAudioStorage(promise)
         }
