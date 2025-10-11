@@ -36,6 +36,7 @@ protocol SoundPlayerManaging: AnyObject {
     func updateConfig(_ newConfig: SoundConfig) throws
     func resetConfigToDefault() throws
     func stop(_ promise: Promise)
+    func flushAudio(_ promise: Promise)
     func interrupt(_ promise: Promise)
     func resume()
     func clearSoundQueue(turnIdToClear turnId: String, resolver promise: Promise)

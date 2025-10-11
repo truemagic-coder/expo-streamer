@@ -34,6 +34,7 @@ interface AudioPlaybackManaging {
     fun clearPlaybackQueueByTurnId(turnId: String, promise: Promise)
     fun pausePlayback(promise: Promise?)
     fun stopPlayback(promise: Promise?)
+    fun flushAudio(promise: Promise?)
     fun isPlaying(): Boolean
     fun updateConfig(config: SoundConfig, promise: Promise)
     fun resetConfigToDefault(promise: Promise)
