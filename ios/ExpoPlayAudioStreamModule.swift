@@ -460,7 +460,8 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
     ///   - data: The received audio data.
     ///   - recordingTime: The current recording time.
     ///   - totalDataSize: The total size of the received audio data.
-    func audioStreamManager(_ manager: AudioSessionManager, didReceiveAudioData data: Data, recordingTime: TimeInterval, totalDataSize: Int64) {
+    ///   - soundLevel: The calculated sound level in dB.
+    func audioStreamManager(_ manager: AudioSessionManager, didReceiveAudioData data: Data, recordingTime: TimeInterval, totalDataSize: Int64, soundLevel: Float) {
         guard let fileURL = manager.recordingFileURL,
               let settings = manager.recordingSettings else { return }
         
@@ -484,7 +485,8 @@ public class ExpoPlayAudioStreamModule: Module, AudioStreamManagerDelegate, Micr
             "encoded": encodedData,
             "deltaSize": deltaSize,
             "totalSize": fileSize,
-            "mimeType": manager.mimeType
+            "mimeType": manager.mimeType,
+            "soundLevel": soundLevel
         ]
         // Emit the event to JavaScript
         sendEvent(audioDataEvent, eventBody)

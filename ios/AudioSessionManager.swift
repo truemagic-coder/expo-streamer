@@ -53,6 +53,7 @@ class AudioSessionManager: AudioSessionManaging {
     private var lastBufferTime: AVAudioTime?
     private var accumulatedData = Data()
     private var recentData = [Float]() // This property stores the recent audio data
+    private var lastSoundLevel: Float = -160.0 // Track the last calculated sound level
     
     weak var delegate: AudioStreamManagerDelegate?  // Define the delegate here
 
@@ -520,7 +521,7 @@ class AudioSessionManager: AudioSessionManaging {
         if !accumulatedData.isEmpty {
             let currentTime = Date()
             let recordingTime = currentTime.timeIntervalSince(startTime)
-            delegate?.audioStreamManager(self, didReceiveAudioData: accumulatedData, recordingTime: recordingTime, totalDataSize: totalDataSize)
+            delegate?.audioStreamManager(self, didReceiveAudioData: accumulatedData, recordingTime: recordingTime, totalDataSize: totalDataSize, soundLevel: lastSoundLevel)
             accumulatedData.removeAll()
         }
         
@@ -808,8 +809,12 @@ class AudioSessionManager: AudioSessionManaging {
             if let startTime = startTime {
                 let recordingTime = currentTime.timeIntervalSince(startTime)
                 let dataToProcess = accumulatedData
+                
+                // Calculate sound level from the working buffer
+                let soundLevel = AudioUtils.calculatePowerLevel(from: workingBuffer)
+                lastSoundLevel = soundLevel
 
-                delegate?.audioStreamManager(self, didReceiveAudioData: dataToProcess, recordingTime: recordingTime, totalDataSize: totalDataSize)
+                delegate?.audioStreamManager(self, didReceiveAudioData: dataToProcess, recordingTime: recordingTime, totalDataSize: totalDataSize, soundLevel: soundLevel)
 
                 self.lastEmissionTime = currentTime
                 self.lastEmittedSize = totalDataSize
